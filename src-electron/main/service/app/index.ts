@@ -1,0 +1,85 @@
+import { app, ipcMain, IpcMainInvokeEvent, Menu } from 'electron';
+import log from 'electron-log';
+import { inject, injectable } from 'inversify';
+import { DateTime } from 'luxon';
+import { exit } from 'node:process';
+import { release, version } from 'os';
+
+import packageJson from 'app/package.json';
+import { TrayService } from 'app/src-electron/main/service/tray';
+import type { WindowService } from 'app/src-electron/main/service/window';
+
+import { ServiceType } from 'src/types/service';
+import type { AppServiceTrait } from 'src/types/service/app';
+import { WindowType } from 'src/types/service/window/types';
+import { getArbitraryService } from 'app/src-electron/main/service';
+
+@injectable()
+export class AppService implements AppServiceTrait {
+  constructor(
+    @inject(ServiceType.window)
+    private _windowService: WindowService,
+    @inject(ServiceType.tray)
+    private _trayService: TrayService,
+  ) {}
+
+  init() {
+    log.initialize();
+    log.transports.file.format = '{text}';
+    log.transports.file.transforms.push(({ data, message }) => {
+      const { date, level, variables } = message;
+      return [
+        `[${DateTime.fromJSDate(date).toISO()}] ${variables?.processType}.${level.toUpperCase()}: `,
+        ...data,
+      ];
+    });
+    this._initApplication();
+    this._initIpc();
+  }
+
+  private _initApplication() {
+    log.info(`OS version: ${version()} (${release()})`);
+    Menu.setApplicationMenu(null);
+    if (!app.requestSingleInstanceLock()) {
+      app.quit();
+      exit(-1);
+    }
+    app.setLoginItemSettings({
+      openAtLogin: true,
+    });
+    app.on('second-instance', () => {
+      app.focus();
+      this._windowService.getWindow(WindowType.main).show();
+    });
+    app.whenReady().then(
+      () => {
+        log.info(`${packageJson.productName} is ready`);
+        this._trayService.create();
+        this._windowService.getWindow(WindowType.main).create();
+      },
+      () => {},
+    );
+  }
+
+  private _initIpc() {
+    ipcMain.handle(
+      'service.invoke',
+      <T extends ServiceType>(
+        _: IpcMainInvokeEvent,
+        serviceName: T,
+        functionName: string,
+        ...payloads: unknown[]
+      ) => {
+        const service = getArbitraryService(serviceName);
+        const func = service[functionName];
+        if (!func) {
+          throw new Error(`Function ${functionName} not found in service ${serviceName}`);
+        }
+        if (typeof func === 'function') {
+          return func.bind(service)(...payloads);
+        }
+        throw new Error(`Function ${functionName} in service ${serviceName} is not a function`);
+      },
+    );
+  }
+}

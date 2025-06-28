@@ -1,0 +1,33 @@
+import { Container } from 'inversify';
+
+import { AppService } from 'app/src-electron/main/service/app';
+import { TrayService } from 'app/src-electron/main/service/tray';
+import { WindowService } from 'app/src-electron/main/service/window';
+
+import { ServiceType } from 'src/types/service';
+
+const container = new Container({
+  defaultScope: 'Singleton',
+});
+
+export interface ServiceMapping {
+  [ServiceType.app]: AppService;
+  [ServiceType.tray]: TrayService;
+  [ServiceType.window]: WindowService;
+}
+
+export const initContainer = () => {
+  container.bind(ServiceType.app).to(AppService);
+  container.bind(ServiceType.tray).to(TrayService);
+  container.bind(ServiceType.window).to(WindowService);
+};
+
+export const getArbitraryService = <T extends keyof ServiceMapping>(serviceType: T) => {
+  return container.get<{
+    [key: string]: unknown;
+  }>(serviceType);
+};
+
+export const getService = <T extends ServiceType>(serviceType: T) => {
+  return container.get<ServiceMapping[T]>(serviceType);
+};

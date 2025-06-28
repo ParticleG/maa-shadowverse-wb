@@ -1,5 +1,8 @@
-import { defineStore } from '#q-app/wrappers'
-import { createPinia } from 'pinia'
+import { defineStore } from '#q-app/wrappers';
+import { createPinia } from 'pinia';
+import { createPersistedState } from 'pinia-plugin-persistedstate';
+
+import packageJson from 'app/package.json';
 
 /*
  * When adding new properties to stores, you should also
@@ -21,12 +24,14 @@ declare module 'pinia' {
  * async/await or return a Promise which resolves
  * with the Store instance.
  */
-
+// noinspection JSUnusedGlobalSymbols
 export default defineStore((/* { ssrContext } */) => {
-  const pinia = createPinia()
-
-  // You can add Pinia plugins here
-  // pinia.use(SomePiniaPlugin)
-
-  return pinia
-})
+  const pinia = createPinia();
+  pinia.use(
+    createPersistedState({
+      auto: true,
+      key: (id) => `${packageJson.name}.${id}`,
+    }),
+  );
+  return pinia;
+});
