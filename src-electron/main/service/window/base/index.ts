@@ -34,6 +34,13 @@ export abstract class BaseWindow {
         },
       });
     });
+    this._window.once('ready-to-show', () => {
+      if (this._window) {
+        if (process.env.NODE_ENV === 'development') {
+          this._window.webContents.openDevTools({ mode: 'detach' });
+        }
+      }
+    });
     this._window.loadURL(this._url).catch((e) => Logger.warn('loadURL', e));
 
     return this._window;

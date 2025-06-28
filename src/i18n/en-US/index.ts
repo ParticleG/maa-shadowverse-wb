@@ -36,6 +36,12 @@ export default {
       labels: {
         title: 'Home',
       },
+      notifications: {
+        connectSuccess: 'Connected successfully: {deviceName}',
+        connectError: 'Connection error: {deviceName}',
+        disconnectSuccess: 'Disconnected successfully: {deviceName}',
+        disconnectError: 'Disconnection error: {deviceName}',
+      },
     },
   },
 };
