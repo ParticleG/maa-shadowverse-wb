@@ -1,11 +1,12 @@
-import { AdbController, Resource, Tasker } from '@maaxyz/maa-node';
+import { AdbController, Global, Resource, Tasker } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
 import { injectable } from 'inversify';
 
-import { resourcesPath } from 'app/src-electron/main/service/maa/constants';
+import { LOG_PATH, RESOURCES_PATH } from 'app/src-electron/main/service/maa/constants';
+import { decideMulligan, doMulligan } from 'app/src-electron/main/service/maa/types';
 
 import { MaaServiceTrait } from 'src/types/service/maa';
-import { AdbDevice, type Pipeline } from 'src/types/service/maa/types';
+import { AdbDevice, Task } from 'src/types/service/maa/types';
 import { isValidIpPort } from 'src/utils/common';
 
 @injectable()
@@ -18,6 +19,8 @@ export class MaaService implements MaaServiceTrait {
     this._resource.notify = (message, details) => {
       Logger.info(message, details);
     };
+    this._resource.register_custom_recognizer('decideMulligan', decideMulligan);
+    this._resource.register_custom_action('doMulligan', doMulligan);
   }
 
   async listDevices(): Promise<AdbDevice[]> {
@@ -32,7 +35,13 @@ export class MaaService implements MaaServiceTrait {
           input_methods: device[4],
           config: device[5],
         }))
-        .filter((device) => isValidIpPort(device.address)) ?? []
+        .filter((device) => isValidIpPort(device.address))
+        .reduce((acc, item) => {
+          if (!acc.some((d) => d.address === item.address)) {
+            acc.push(item);
+          }
+          return acc;
+        }, new Array<AdbDevice>()) ?? []
     );
   }
 
@@ -101,7 +110,23 @@ export class MaaService implements MaaServiceTrait {
     return false;
   }
 
-  async runPipeline(pipeline: Pipeline): Promise<boolean> {
+  async runExistTask(taskName: string): Promise<boolean> {
+    const tasker = await this._createTasker();
+    return await tasker.post_task(taskName).wait().succeeded;
+  }
+
+  async runNewTask(task: Task): Promise<boolean> {
+    const tasker = await this._createTasker();
+    return await tasker.post_task(Object.keys(task)[0]!, task).wait().succeeded;
+  }
+
+  async create() {
+    Global.log_dir = LOG_PATH;
+    Global.stdout_level = 'Off';
+    return await this._resource.post_bundle(RESOURCES_PATH).wait().succeeded;
+  }
+
+  private async _createTasker() {
     if (!this._adbController) {
       throw new Error('Not connected to any device');
     }
@@ -120,12 +145,8 @@ export class MaaService implements MaaServiceTrait {
     tasker.bind(this._resource);
 
     if (!tasker.inited) {
-      return false;
+      throw new Error('Tasker not initialized');
     }
-    return await tasker.post_task(Object.keys(pipeline)[0]!, pipeline).wait().succeeded;
-  }
-
-  async create() {
-    return await this._resource.post_bundle(resourcesPath).wait().succeeded;
+    return tasker;
   }
 }

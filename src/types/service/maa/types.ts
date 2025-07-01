@@ -7,7 +7,7 @@ export interface AdbDevice {
   config: string;
 }
 
-interface PipelineWaitFreezesConfig {
+interface TaskWaitFreezesConfig {
   method?: 1 | 3 | 5; // Default: 5
   rate_limit?: number; // Default: 1000
   target?: true | string | number[]; // Default: true
@@ -17,7 +17,7 @@ interface PipelineWaitFreezesConfig {
   timeout?: number; // Default: 20000
 }
 
-interface PipelineCommonConfig {
+interface TaskCommonConfig {
   enabled?: boolean; // Default: true
   focus?: null; // TODO: Unsupported, waiting for doc update
   interrupt?: string | string[];
@@ -25,20 +25,20 @@ interface PipelineCommonConfig {
   next?: string | string[];
   on_error?: string | string[];
   post_delay?: number; // Default: 200
-  post_wait_freezes?: number | PipelineWaitFreezesConfig; // Default: 0
+  post_wait_freezes?: number | TaskWaitFreezesConfig; // Default: 0
   pre_delay?: number; // Default: 200
-  pre_wait_freezes?: number | PipelineWaitFreezesConfig; // Default: 0
+  pre_wait_freezes?: number | TaskWaitFreezesConfig; // Default: 0
   rate_limit?: number; // Default: 1000
   timeout?: number; // Default: 20000
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#directhit
-interface PipelineRecognitionConfigDirectHit {
+interface TaskRecognitionConfigDirectHit {
   recognition?: 'DirectHit';
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#templatematch
-interface PipelineRecognitionConfigTemplateMatch {
+interface TaskRecognitionConfigTemplateMatch {
   recognition: 'TemplateMatch';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -51,7 +51,7 @@ interface PipelineRecognitionConfigTemplateMatch {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#featurematch
-interface PipelineRecognitionConfigFeatureMatch {
+interface TaskRecognitionConfigFeatureMatch {
   recognition: 'FeatureMatch';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -65,7 +65,7 @@ interface PipelineRecognitionConfigFeatureMatch {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#colormatch
-interface PipelineRecognitionConfigColorMatch {
+interface TaskRecognitionConfigColorMatch {
   recognition: 'ColorMatch';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -79,7 +79,7 @@ interface PipelineRecognitionConfigColorMatch {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#colormatch
-interface PipelineRecognitionConfigOCR {
+interface TaskRecognitionConfigOCR {
   recognition: 'OCR';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -93,7 +93,7 @@ interface PipelineRecognitionConfigOCR {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#neuralnetworkclassify
-interface PipelineRecognitionConfigNeuralNetworkClassify {
+interface TaskRecognitionConfigNeuralNetworkClassify {
   recognition: 'NeuralNetworkClassify';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -105,7 +105,7 @@ interface PipelineRecognitionConfigNeuralNetworkClassify {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#neuralnetworkdetect
-interface PipelineRecognitionConfigNeuralNetworkDetect {
+interface TaskRecognitionConfigNeuralNetworkDetect {
   recognition: 'NeuralNetworkDetect';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -118,7 +118,7 @@ interface PipelineRecognitionConfigNeuralNetworkDetect {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#custom
-interface PipelineRecognitionConfigCustom {
+interface TaskRecognitionConfigCustom {
   recognition: 'Custom';
   roi?: number[] | string; // Default: [0, 0, 0, 0]
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -126,30 +126,30 @@ interface PipelineRecognitionConfigCustom {
   custom_recognition_param?: object; // Default: {}
 }
 
-type PipelineRecognitionConfig =
-  | PipelineRecognitionConfigDirectHit
-  | PipelineRecognitionConfigTemplateMatch
-  | PipelineRecognitionConfigFeatureMatch
-  | PipelineRecognitionConfigColorMatch
-  | PipelineRecognitionConfigOCR
-  | PipelineRecognitionConfigNeuralNetworkClassify
-  | PipelineRecognitionConfigNeuralNetworkDetect
-  | PipelineRecognitionConfigCustom;
+type TaskRecognitionConfig =
+  | TaskRecognitionConfigDirectHit
+  | TaskRecognitionConfigTemplateMatch
+  | TaskRecognitionConfigFeatureMatch
+  | TaskRecognitionConfigColorMatch
+  | TaskRecognitionConfigOCR
+  | TaskRecognitionConfigNeuralNetworkClassify
+  | TaskRecognitionConfigNeuralNetworkDetect
+  | TaskRecognitionConfigCustom;
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#donothing
-interface PipelineCommandActionDoNothing {
+interface TaskCommandActionDoNothing {
   action?: 'DoNothing'; // Default: 'DoNothing'
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#click
-interface PipelineCommandActionClick {
+interface TaskCommandActionClick {
   action: 'Click';
   target?: true | string | number[]; // Default: true
   target_offset?: number[]; // Default: [0, 0, 0, 0]
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#longpress
-interface PipelineCommandActionLongPress {
+interface TaskCommandActionLongPress {
   action: 'LongPress';
   target?: true | string | number[]; // Default: true
   target_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -157,7 +157,7 @@ interface PipelineCommandActionLongPress {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#swipe
-interface PipelineCommandActionSwipe {
+interface TaskCommandActionSwipe {
   action: 'Swipe';
   begin?: true | string | number[]; // Default: true
   begin_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -167,42 +167,42 @@ interface PipelineCommandActionSwipe {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#multiswipe
-interface PipelineCommandActionMultiSwipe {
+interface TaskCommandActionMultiSwipe {
   action: 'MultiSwipe';
-  swipes: Omit<PipelineCommandActionSwipe, 'action'>[]; // Array of swipe actions
+  swipes: Omit<TaskCommandActionSwipe, 'action'>[]; // Array of swipe actions
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#key
-interface PipelineCommandActionKey {
+interface TaskCommandActionKey {
   action: 'Key';
   key: number | number[]; // Keycode or array of Keycodes to press
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#inputtext
-interface PipelineCommandActionInputText {
+interface TaskCommandActionInputText {
   action: 'InputText';
   input_text: string; // Text to input
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#startapp
-interface PipelineCommandActionStartApp {
+interface TaskCommandActionStartApp {
   action: 'StartApp';
   package: string; // Package name of the app to start
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#stopapp
-interface PipelineCommandActionStopApp {
+interface TaskCommandActionStopApp {
   action: 'StopApp';
   package: string; // Package name of the app to stop
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#stoptask
-interface PipelineCommandActionStopTask {
+interface TaskCommandActionStopTask {
   action: 'StopTask';
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#command
-interface PipelineCommandActionCommand {
+interface TaskCommandActionCommand {
   action: 'Command';
   exec: string; // Executable path
   args?: string[]; // Arguments for the command
@@ -210,7 +210,7 @@ interface PipelineCommandActionCommand {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#custom-1
-interface PipelineCommandActionCustom {
+interface TaskCommandActionCustom {
   action: 'Custom';
   custom_action: string; // Custom action name
   custom_action_param?: object; // Default: {}
@@ -218,21 +218,21 @@ interface PipelineCommandActionCustom {
   target_offset?: number[]; // Default: [0, 0, 0, 0]
 }
 
-type PipelineCommandAction =
-  | PipelineCommandActionDoNothing
-  | PipelineCommandActionClick
-  | PipelineCommandActionLongPress
-  | PipelineCommandActionSwipe
-  | PipelineCommandActionMultiSwipe
-  | PipelineCommandActionKey
-  | PipelineCommandActionInputText
-  | PipelineCommandActionStartApp
-  | PipelineCommandActionStopApp
-  | PipelineCommandActionStopTask
-  | PipelineCommandActionCommand
-  | PipelineCommandActionCustom;
+type TaskCommandAction =
+  | TaskCommandActionDoNothing
+  | TaskCommandActionClick
+  | TaskCommandActionLongPress
+  | TaskCommandActionSwipe
+  | TaskCommandActionMultiSwipe
+  | TaskCommandActionKey
+  | TaskCommandActionInputText
+  | TaskCommandActionStartApp
+  | TaskCommandActionStopApp
+  | TaskCommandActionStopTask
+  | TaskCommandActionCommand
+  | TaskCommandActionCustom;
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md
-export interface Pipeline {
-  [key: string]: PipelineCommonConfig & PipelineRecognitionConfig & PipelineCommandAction;
+export interface Task {
+  [key: string]: TaskCommonConfig & TaskRecognitionConfig & TaskCommandAction;
 }

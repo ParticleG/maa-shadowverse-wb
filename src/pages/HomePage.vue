@@ -5,6 +5,7 @@ import { onMounted, ref, toRaw } from 'vue';
 import { ServiceType } from 'src/types/service';
 import type { AdbDevice } from 'src/types/service/maa/types';
 import { i18nSubPath, useService } from 'src/utils/common';
+import { autoRankBattle } from 'components/tasks';
 
 const i18n = i18nSubPath('pages.HomePage');
 const { notify } = useQuasar();
@@ -39,21 +40,17 @@ const testPipeline = async () => {
     return;
   }
   try {
-    const result = await maaService.runPipeline({
-      begin: {
-        next: ['splashScreen'],
-      },
-      splashScreen: {
-        action: 'Click',
-        recognition: 'OCR',
-        expected: '点击开始游戏',
-        next: [],
-      },
-    });
-    notify({
-      type: 'positive',
-      message: i18n('notifications.pipelineTestSuccess', { result }),
-    });
+    if (await maaService.runNewTask(autoRankBattle)) {
+      notify({
+        type: 'positive',
+        message: i18n('notifications.pipelineTestSuccess'),
+      });
+    } else {
+      notify({
+        type: 'negative',
+        message: i18n('notifications.pipelineTestFailed'),
+      });
+    }
   } catch (error) {
     notify({
       type: 'negative',
