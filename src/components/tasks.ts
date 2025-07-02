@@ -33,12 +33,20 @@ export const toMainScreen: Task = {
     action: 'Click',
   },
   clickStartGame: {
-    next: ['checkEnterGame', 'goToMainScreen'],
+    next: ['confirmStartNotice', 'checkEnterGame', 'goToMainScreen'],
     recognition: 'OCR',
     roi: [1075, 340, 155, 40],
     expected: '切换至怀旧服',
     action: 'Click',
     target: [SCREEN_LONG_SIDE / 2, 620, 1, 1],
+  },
+  confirmStartNotice: {
+    next: ['checkEnterGame', 'goToMainScreen'],
+    recognition: 'OCR',
+    roi: [597, 122, 86, 52],
+    expected: '确认',
+    action: 'Click',
+    target: [SCREEN_LONG_SIDE / 2, 560, 1, 1],
   },
   checkEnterGame: {
     next: ['goToMainScreen'],
@@ -132,10 +140,25 @@ export const autoRankBattle: Task = {
     expected: '对手',
   },
   checkPlayerTurn: {
-    next: [],
+    next: ['resetHandCardPosition'],
     recognition: 'OCR',
     roi: [1120, 277, 88, 87],
     expected: '结束',
+  },
+  resetHandPosition: {
+    next: ['focusHandCards'],
+    action: 'Click',
+    target: [85, 680, 1, 1],
+  },
+  focusOnHand: {
+    next: ['getTurnInfo'],
+    action: 'Click',
+    target: [990, 680, 1, 1],
+  },
+  getTurnInfo: {
+    next: [],
+    recognition: 'Custom',
+    custom_recognition: 'getTurnInfo',
   },
 };
 

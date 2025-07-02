@@ -1,6 +1,7 @@
 import { Container } from 'inversify';
 
 import { AppService } from 'app/src-electron/main/service/app';
+import { GameService } from 'app/src-electron/main/service/game';
 import { MaaService } from 'app/src-electron/main/service/maa';
 import { TrayService } from 'app/src-electron/main/service/tray';
 import { WindowService } from 'app/src-electron/main/service/window';
@@ -13,6 +14,7 @@ const container = new Container({
 
 export interface ServiceMapping {
   [ServiceType.app]: AppService;
+  [ServiceType.game]: GameService;
   [ServiceType.maa]: MaaService;
   [ServiceType.tray]: TrayService;
   [ServiceType.window]: WindowService;
@@ -20,6 +22,7 @@ export interface ServiceMapping {
 
 export const initContainer = () => {
   container.bind(ServiceType.app).to(AppService);
+  container.bind(ServiceType.game).to(GameService);
   container.bind(ServiceType.maa).to(MaaService);
   container.bind(ServiceType.tray).to(TrayService);
   container.bind(ServiceType.window).to(WindowService);

@@ -1,13 +1,14 @@
 import { AdbController, Global, Resource, Tasker } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 
+import { GameService } from 'app/src-electron/main/service/game';
 import { LOG_PATH, RESOURCES_PATH } from 'app/src-electron/main/service/maa/constants';
-import { decideMulligan, doMulligan } from 'app/src-electron/main/service/maa/types';
 
 import { MaaServiceTrait } from 'src/types/service/maa';
 import { AdbDevice, Task } from 'src/types/service/maa/types';
 import { isValidIpPort } from 'src/utils/common';
+import { ServiceType } from 'src/types/service';
 
 @injectable()
 export class MaaService implements MaaServiceTrait {
@@ -15,12 +16,13 @@ export class MaaService implements MaaServiceTrait {
   private _connecting = false;
   private _resource = new Resource();
 
-  constructor() {
+  constructor(
+    @inject(ServiceType.game)
+    private _gameService: GameService,
+  ) {
     this._resource.notify = (message, details) => {
       Logger.info(message, details);
     };
-    this._resource.register_custom_recognizer('decideMulligan', decideMulligan);
-    this._resource.register_custom_action('doMulligan', doMulligan);
   }
 
   async listDevices(): Promise<AdbDevice[]> {
@@ -123,6 +125,7 @@ export class MaaService implements MaaServiceTrait {
   async create() {
     Global.log_dir = LOG_PATH;
     Global.stdout_level = 'Off';
+    this._gameService.register(this._resource);
     return await this._resource.post_bundle(RESOURCES_PATH).wait().succeeded;
   }
 
