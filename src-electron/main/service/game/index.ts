@@ -4,14 +4,17 @@ import { injectable } from 'inversify';
 
 import {
   getMulliganByCost,
-  getInitialCards,
+  getInitialHand,
   getOrderOfPlay,
+  getHandCount,
+  getCardInfoFromName,
 } from 'app/src-electron/main/service/game/utils';
 import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
 import { GameServiceTrait } from 'src/types/service/game';
-import { GameData } from 'src/types/service/game/types';
+import { CardInfo, GameData } from 'src/types/service/game/types';
 import { SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
+import { HAND_POSITIONS_MAP } from 'app/src-electron/main/service/game/constants';
 
 @injectable()
 export class GameService implements GameServiceTrait {
@@ -73,30 +76,65 @@ export class GameService implements GameServiceTrait {
       Logger.warn('Failed to get order of play');
       return null;
     }
-    Logger.info(`orderOfPlay: ${orderOfPlay}`);
-    this._gameData.self.hand = await getInitialCards(self);
-    Logger.info('initialCards: ', this._gameData.self.hand);
+    Logger.info(`Order of play: ${orderOfPlay}`);
+    this._gameData.self.hand = await getInitialHand(self);
+    Logger.info('Initial cards: ', this._gameData.self.hand);
 
-    return [
-      {
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-      '',
-    ];
+    return [EMPTY_RECT, ''];
   }
 
   private async recTurnInfo(
     self: CustomRecognizerSelf,
   ): Promise<[out_box: api.Rect, out_detail: string] | null> {
-    Logger.info(self.param)
-    await self.context.tasker.controller?.post_screencap().wait();
-    const cardDetailImage = self.context.tasker.controller?.cached_image;
-    if (!cardDetailImage) {
-      Logger.warn(`No image available for initial card`);
+    const handCount = await getHandCount(self);
+    if (handCount === undefined) {
+      Logger.warn('Failed to get hand count');
+      return null;
     }
-    return null;
+    Logger.info(`Hand count: ${handCount}`);
+    const handPositions = HAND_POSITIONS_MAP[handCount];
+    if (!handPositions) {
+      Logger.warn(`No hand positions defined for hand count: ${handCount}`);
+      return null;
+    }
+    const currentHand: CardInfo[] = [];
+    for (const handPosition of handPositions) {
+      if (
+        !(
+          await self.context.run_action('GameServiceActGetTurnHand', EMPTY_RECT, '', {
+            GameServiceActGetTurnHand: {
+              action: 'Click',
+              target: handPosition,
+              post_wait_freezes: {
+                rate_limit: 50,
+                target: [66, 35, 337, 45],
+                threshold: 0.9,
+                time: 50,
+              },
+            },
+          })
+        )?.completed
+      ) {
+        Logger.warn(`Failed to click on hand card ${JSON.stringify(handPosition)}`);
+        break;
+      }
+      const cardInfo = await getCardInfoFromName(self.context);
+      if (!cardInfo) {
+        Logger.warn(`Card info not found for hand card ${JSON.stringify(handPosition)}`);
+        break;
+      }
+      cardInfo.position = {
+        x: handPosition[0],
+        y: handPosition[1],
+      };
+      currentHand.push(cardInfo);
+    }
+    Logger.info('Current hand cards: ', currentHand);
+    if (currentHand.length !== handCount) {
+      Logger.warn(`Expected ${handCount} cards in hand, but got ${currentHand.length}`);
+      return null;
+    }
+    this._gameData.self.hand = currentHand;
+    return [EMPTY_RECT, ''];
   }
 }

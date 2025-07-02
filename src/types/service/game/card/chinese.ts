@@ -244,6 +244,10 @@ export enum CardNameChinese {
   Dimension_Clim = '超越次元',
 }
 
+export const CARD_NAME_CHINESE_CHARACTERS = Array.from(
+  new Set(Object.values(CardNameChinese).join('').split('')),
+);
+
 export const CARD_NAME_CHINESE_MAP: Record<CardNameChinese, CardName> = {
   [CardNameChinese.Skeleton]: CardName.Skeleton,
   [CardNameChinese.Puppet]: CardName.Puppet,

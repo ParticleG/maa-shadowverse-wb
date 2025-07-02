@@ -85,7 +85,7 @@ interface TaskRecognitionConfigOCR {
   roi_offset?: number[]; // Default: [0, 0, 0, 0]
   expected: string | string[];
   threshold?: number; // Default: 0.3
-  replace?: string | string[]; // Default: ''
+  replace?: string[] | string[][]; // Default: []
   order_by?: 'Horizontal' | 'Vertical' | 'Area' | 'Length' | 'Random'; // Default: 'Horizontal'
   index?: number; // Default: 0
   only_rec?: boolean; // Default: false

@@ -110,6 +110,11 @@ export const getDailyPack: Task = {
 };
 
 export const autoRankBattle: Task = {
+  getTurnInfo: {
+    next: [],
+    recognition: 'Custom',
+    custom_recognition: 'recTurnInfo',
+  },
   checkStageSwapInitialCards: {
     next: ['doMulligan'],
     recognition: 'OCR',
@@ -122,9 +127,9 @@ export const autoRankBattle: Task = {
     next: ['confirmMulligan'],
     recognition: 'Custom',
     roi: [1066, 567, 170, 102],
-    custom_recognition: 'decideMulligan',
+    custom_recognition: 'recMulligan',
     action: 'Custom',
-    custom_action: 'doMulligan',
+    custom_action: 'actMulligan',
   },
   confirmMulligan: {
     next: ['checkOpponentTurn', 'checkPlayerTurn'],
@@ -140,7 +145,7 @@ export const autoRankBattle: Task = {
     expected: '对手',
   },
   checkPlayerTurn: {
-    next: ['resetHandCardPosition'],
+    next: ['resetHandPosition'],
     recognition: 'OCR',
     roi: [1120, 277, 88, 87],
     expected: '结束',
@@ -150,15 +155,10 @@ export const autoRankBattle: Task = {
     action: 'Click',
     target: [85, 680, 1, 1],
   },
-  focusOnHand: {
+  focusHandCards: {
     next: ['getTurnInfo'],
     action: 'Click',
     target: [990, 680, 1, 1],
-  },
-  getTurnInfo: {
-    next: [],
-    recognition: 'Custom',
-    custom_recognition: 'getTurnInfo',
   },
 };
 

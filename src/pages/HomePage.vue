@@ -5,7 +5,7 @@ import { onMounted, ref, toRaw } from 'vue';
 import { ServiceType } from 'src/types/service';
 import type { AdbDevice } from 'src/types/service/maa/types';
 import { i18nSubPath, useService } from 'src/utils/common';
-import { getDailyPack } from 'components/tasks';
+import { autoRankBattle } from 'components/tasks';
 
 const i18n = i18nSubPath('pages.HomePage');
 const { notify } = useQuasar();
@@ -40,7 +40,7 @@ const testPipeline = async () => {
     return;
   }
   try {
-    if (await maaService.runNewTask(getDailyPack)) {
+    if (await maaService.runNewTask(autoRankBattle)) {
       notify({
         type: 'positive',
         message: i18n('notifications.pipelineTestSuccess'),

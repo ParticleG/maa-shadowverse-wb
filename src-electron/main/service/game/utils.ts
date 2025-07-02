@@ -1,53 +1,100 @@
-import type { CustomRecognizerSelf } from '@maaxyz/maa-node';
+import type { Context, CustomRecognizerSelf } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
 
 import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
+import { CARD_INFO_MAP } from 'src/types/service/game/card';
+import {
+  CARD_NAME_CHINESE_CHARACTERS,
+  CARD_NAME_CHINESE_MAP,
+  CardNameChinese
+} from 'src/types/service/game/card/chinese';
 import type { OrderOfPlay } from 'src/types/service/game/field';
 import {
   ORDER_OF_PLAY_CHINESE_MAP,
   OrderOfPlayChinese,
 } from 'src/types/service/game/field/chinese';
 import type { CardInfo } from 'src/types/service/game/types';
-import { CARD_NAME_CHINESE_MAP, CardNameChinese } from 'src/types/service/game/card/chinese';
-import { CARD_INFO_MAP } from 'src/types/service/game/card';
 
-export const getOrderOfPlay = async (
-  self: CustomRecognizerSelf,
-): Promise<OrderOfPlay | undefined> => {
-  const result = await self.context.run_recognition('getMatchInfo_getOrderOfPlay', self.image, {
-    getMatchInfo_getOrderOfPlay: {
+export const getCardInfoFromName = async (context: Context): Promise<CardInfo | undefined> => {
+  const screenshot = await getScreenshot(context);
+  if (!screenshot) {
+    Logger.warn(`No screenshot available`);
+    return;
+  }
+  const result = await context.run_recognition('GameServiceRecGetCardInfoFromName', screenshot, {
+    GameServiceRecGetCardInfoFromName: {
       recognition: 'OCR',
-      roi: [1066, 567, 170, 102],
-      expected: Object.values(OrderOfPlayChinese),
+      roi: [66, 31, 227, 51],
+      expected: CARD_NAME_CHINESE_CHARACTERS,
+      replace: [
+        ['毀', '毁'],
+        ['天', '灭'],
+      ],
     },
   });
-  if (!result || !result.hit || result.detail.filtered.length !== 1) {
+  if (!result || !result.hit) {
+    Logger.warn(`Card OCR Name not found or not in expected format: ${JSON.stringify(result)}`);
+    return;
+  }
+  const cardName = result.detail.filtered[0]?.text as CardNameChinese;
+  if (!Object.values(CardNameChinese).includes(cardName)) {
+    Logger.warn(`Card OCR Name not found in CardChineseName: ${cardName}`);
+    return;
+  }
+  const cardStandardName = CARD_NAME_CHINESE_MAP[cardName];
+  if (!cardStandardName) {
+    Logger.warn(`Card Chinese name not found in CARD_NAME_CHINESE_MAP: ${cardName}`);
+    return;
+  }
+  return structuredClone(CARD_INFO_MAP[cardStandardName]);
+};
+
+export const getHandCount = async (self: CustomRecognizerSelf): Promise<number | undefined> => {
+  const handCountResult = await self.context.run_recognition(
+    'GameServiceRecGetHandCount',
+    self.image,
+    {
+      GameServiceRecGetHandCount: {
+        recognition: 'OCR',
+        roi: [54, 664, 29, 37],
+        expected: '\\d',
+      },
+    },
+  );
+  if (!handCountResult || !handCountResult.hit || handCountResult.detail.filtered.length !== 1) {
     Logger.warn(
-      `Match info 'orderOfPlay' not found or not in expected format: ${JSON.stringify(result)}`,
+      `Deck count not found or not in expected format: ${JSON.stringify(handCountResult, null, 2)}`,
     );
     return;
   }
-  const orderOfPlay = result.detail.filtered
-    .filter((hit) => hit.text && hit.text in OrderOfPlayChinese)
-    .map((hit) => ORDER_OF_PLAY_CHINESE_MAP[hit.text as OrderOfPlayChinese])[0];
-  if (!orderOfPlay) {
-    Logger.warn('Failed to get order of play: Unknown text');
+  const deckCount = Number(handCountResult.detail.filtered[0]?.text);
+  if (isNaN(deckCount)) {
+    Logger.warn(`Deck count is not a number: ${handCountResult.detail.filtered[0]?.text}`);
     return;
   }
-  return orderOfPlay;
+  if (deckCount < 0 || deckCount > 10) {
+    Logger.warn(`Deck count is out of expected range: ${deckCount}`);
+    return;
+  }
+  return deckCount;
 };
 
-export const getInitialCards = async (self: CustomRecognizerSelf) => {
+export const getInitialHand = async (self: CustomRecognizerSelf) => {
   const cards: CardInfo[] = [];
   for (let index = 0; index < 4; index++) {
     if (
       !(
-        await self.context.run_action('getMatchInfo_clickInitialCard', EMPTY_RECT, '', {
-          getMatchInfo_clickInitialCard: {
+        await self.context.run_action('GameServiceActGetInitialHand', EMPTY_RECT, '', {
+          GameServiceActGetInitialHand: {
             action: 'Click',
             target: [270 + index * 205, 520, 1, 1],
-            post_wait_freezes: 1,
+            post_wait_freezes: {
+              rate_limit: 50,
+              target: [66, 35, 337, 45],
+              threshold: 0.9,
+              time: 50,
+            },
           },
         })
       )?.completed
@@ -55,44 +102,9 @@ export const getInitialCards = async (self: CustomRecognizerSelf) => {
       Logger.warn(`Failed to click on initial card #${index}`);
       break;
     }
-    await self.context.tasker.controller?.post_screencap().wait();
-    const cardDetailImage = self.context.tasker.controller?.cached_image;
-    if (!cardDetailImage) {
-      Logger.warn(`No image available for initial card #${index}`);
-      break;
-    }
-    const nameResult = await self.context.run_recognition(
-      'getMatchInfo_identifyInitialCardName',
-      cardDetailImage,
-      {
-        getMatchInfo_identifyInitialCardName: {
-          recognition: 'OCR',
-          roi: [66, 35, 337, 45],
-          expected: '.*',
-        },
-      },
-    );
-    if (!nameResult || !nameResult.hit) {
-      Logger.warn(
-        `'getMatchInfo_identifyInitialCardName' not found or not in expected format: ${JSON.stringify(nameResult)}`,
-      );
-      break;
-    }
-
-    const cardName = nameResult.detail.filtered[0]?.text;
-
-    if (!cardName || !(cardName in CardNameChinese)) {
-      Logger.warn(`Card name not found or not in CardChineseName: ${cardName}`);
-      break;
-    }
-    const cardStandardName = CARD_NAME_CHINESE_MAP[cardName as CardNameChinese];
-    if (!cardStandardName) {
-      Logger.warn(`Card Chinese name not found in CARD_NAME_CHINESE_MAP: ${cardName}`);
-      break;
-    }
-    const cardInfo = CARD_INFO_MAP[cardStandardName];
+    const cardInfo = await getCardInfoFromName(self.context);
     if (!cardInfo) {
-      Logger.warn(`Card data not found for card standard name: ${cardStandardName}`);
+      Logger.warn(`Card info not found for initial card #${index}`);
       break;
     }
     cardInfo.position = {
@@ -157,4 +169,36 @@ export const getMulliganByCost = (initialHand: CardInfo[]): CardInfo[] => {
   Logger.debug(`cardsToSwap: ${JSON.stringify(cardsToSwap, undefined, 2)}`);
 
   return cardsToSwap;
+};
+
+export const getOrderOfPlay = async (
+  self: CustomRecognizerSelf,
+): Promise<OrderOfPlay | undefined> => {
+  const result = await self.context.run_recognition('GameServiceRecGetOrderOfPlay', self.image, {
+    GameServiceRecGetOrderOfPlay: {
+      recognition: 'OCR',
+      roi: [1116, 626, 71, 45],
+      expected: Object.values(OrderOfPlayChinese),
+    },
+  });
+  if (!result || !result.hit || result.detail.filtered.length !== 1) {
+    Logger.warn(`Order of play not found or not in expected format: ${JSON.stringify(result)}`);
+    return;
+  }
+  const orderOfPlay = result.detail.filtered
+    .filter(
+      (hit) =>
+        hit.text && Object.values(OrderOfPlayChinese).includes(hit.text as OrderOfPlayChinese),
+    )
+    .map((hit) => ORDER_OF_PLAY_CHINESE_MAP[hit.text as OrderOfPlayChinese])[0];
+  if (!orderOfPlay) {
+    Logger.warn('Failed to get order of play: Unknown text');
+    return;
+  }
+  return orderOfPlay;
+};
+
+export const getScreenshot = async (context: Context): Promise<ArrayBuffer | null | undefined> => {
+  await context.tasker.controller?.post_screencap().wait();
+  return context.tasker.controller?.cached_image;
 };

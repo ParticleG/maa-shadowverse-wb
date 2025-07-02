@@ -79,6 +79,12 @@ export class MaaService implements MaaServiceTrait {
             }
             break;
           }
+          case 'screencap': {
+            if (message === 'Controller.Action.Failed') {
+              Logger.error(`Failed to capture screen on device: ${device.name} (${device.address})`, data);
+            }
+            break;
+          }
           default: {
             Logger.warn(`Unknown Maa action: ${data.action}`, data, message);
             break;
