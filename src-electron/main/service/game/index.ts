@@ -2,23 +2,29 @@ import { CustomActionSelf, CustomRecognizerSelf, api, Resource } from '@maaxyz/m
 import Logger from 'electron-log';
 import { injectable } from 'inversify';
 
+import { getCurrentHand, getInitialHand } from 'app/src-electron/main/service/game/utils';
 import {
-  getMulliganByCost,
-  getInitialHand,
+  decideMulliganByCost,
+  findOptimalPlay,
+} from 'app/src-electron/main/service/game/utils/algorithms';
+import {
+  cancelAll,
+  endTurn,
+  swipeCardByFlatRect,
+} from 'app/src-electron/main/service/game/utils/actions';
+import {
   getOrderOfPlay,
-  getHandCount,
-  getCardInfoFromName,
-} from 'app/src-electron/main/service/game/utils';
+  getPlayPoints,
+} from 'app/src-electron/main/service/game/utils/recognitions';
 import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
 import { GameServiceTrait } from 'src/types/service/game';
-import { CardInfo, GameData } from 'src/types/service/game/types';
-import { SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
-import { HAND_POSITIONS_MAP } from 'app/src-electron/main/service/game/constants';
+import { GameData } from 'src/types/service/game/types';
+import { SCREEN_LONG_SIDE, SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
 
 @injectable()
 export class GameService implements GameServiceTrait {
-  private _gameData: GameData;
+  private readonly _gameData: GameData;
 
   constructor() {
     this._gameData = {
@@ -33,8 +39,9 @@ export class GameService implements GameServiceTrait {
 
   register(resource: Resource) {
     resource.register_custom_action('actMulligan', this.actMulligan.bind(this));
+    resource.register_custom_action('actProcessTurn', this.actProcessTurn.bind(this));
     resource.register_custom_recognizer('recMulligan', this.recMulligan.bind(this));
-    resource.register_custom_recognizer('recTurnInfo', this.recTurnInfo.bind(this));
+    resource.register_custom_recognizer('recProcessTurn', this.recProcessTurn.bind(this));
   }
 
   private async actMulligan(self: CustomActionSelf): Promise<boolean> {
@@ -44,22 +51,18 @@ export class GameService implements GameServiceTrait {
       isSuccess = false;
       return isSuccess;
     }
-    for (const cardToSwap of getMulliganByCost(this._gameData.self.hand)) {
+    for (const cardToSwap of decideMulliganByCost(this._gameData.self.hand)) {
       if (!cardToSwap?.position) {
         Logger.warn('No initial card found for card: ', cardToSwap);
         isSuccess = false;
         continue;
       }
       if (
-        !(
-          await self.context.run_action('doMulligan_swipeCard', EMPTY_RECT, '', {
-            doMulligan_swipeCard: {
-              action: 'Swipe',
-              begin: [cardToSwap.position.x, cardToSwap.position.y, 1, 1],
-              end: [cardToSwap.position.x, SCREEN_SHORT_SIDE - cardToSwap.position.y, 1, 1],
-            },
-          })
-        )?.completed
+        !(await swipeCardByFlatRect(
+          self.context,
+          [cardToSwap.position.x, cardToSwap.position.y, 1, 1],
+          [cardToSwap.position.x, SCREEN_SHORT_SIDE - cardToSwap.position.y, 1, 1],
+        ))
       ) {
         Logger.warn('Failed to swipe on card: ', cardToSwap);
         isSuccess = false;
@@ -71,7 +74,7 @@ export class GameService implements GameServiceTrait {
   private async recMulligan(
     self: CustomRecognizerSelf,
   ): Promise<[out_box: api.Rect, out_detail: string] | null> {
-    const orderOfPlay = await getOrderOfPlay(self);
+    const orderOfPlay = await getOrderOfPlay(self.context, self.image);
     if (!orderOfPlay) {
       Logger.warn('Failed to get order of play');
       return null;
@@ -79,62 +82,84 @@ export class GameService implements GameServiceTrait {
     Logger.info(`Order of play: ${orderOfPlay}`);
     this._gameData.self.hand = await getInitialHand(self);
     Logger.info('Initial cards: ', this._gameData.self.hand);
+    return [EMPTY_RECT, ''];
+  }
+
+  private async recProcessTurn(
+    self: CustomRecognizerSelf,
+  ): Promise<[out_box: api.Rect, out_detail: string] | null> {
+    if (!(await cancelAll(self.context))) {
+      Logger.warn('Failed to reset game state');
+      return null;
+    }
+
+    const playPoints = await getPlayPoints(self.context, self.image);
+    if (playPoints === undefined) {
+      Logger.warn('Failed to get play points');
+      return [EMPTY_RECT, ''];
+    }
+    this._gameData.self.playPoints = playPoints;
+    Logger.info(`Play points: ${playPoints.current}/${playPoints.max}`);
+
+    const currentHand = await getCurrentHand(self);
+    if (!currentHand) {
+      Logger.warn('Failed to get current hand');
+      return null;
+    }
+    Logger.info(`Current hand: `, currentHand);
+    this._gameData.self.hand = currentHand;
+
+    if (!currentHand.find((card) => card.cost <= playPoints.current)) {
+      Logger.warn('No playable cards in hand');
+      if (!(await endTurn(self.context))) {
+        Logger.warn('Failed to end turn');
+        return null;
+      }
+      self.context.override_next('processTurn', ['checkOpponentTurn']);
+    }
 
     return [EMPTY_RECT, ''];
   }
 
-  private async recTurnInfo(
-    self: CustomRecognizerSelf,
-  ): Promise<[out_box: api.Rect, out_detail: string] | null> {
-    const handCount = await getHandCount(self);
-    if (handCount === undefined) {
-      Logger.warn('Failed to get hand count');
-      return null;
+  private async actProcessTurn(self: CustomActionSelf): Promise<boolean> {
+    Logger.info('Processing turn with game data: ', this._gameData);
+    if (!this._gameData.self.hand || !this._gameData.self.playPoints) {
+      Logger.warn('Game data is not ready for processing turn');
+      return false;
     }
-    Logger.info(`Hand count: ${handCount}`);
-    const handPositions = HAND_POSITIONS_MAP[handCount];
-    if (!handPositions) {
-      Logger.warn(`No hand positions defined for hand count: ${handCount}`);
-      return null;
-    }
-    const currentHand: CardInfo[] = [];
-    for (const handPosition of handPositions) {
-      if (
-        !(
-          await self.context.run_action('GameServiceActGetTurnHand', EMPTY_RECT, '', {
-            GameServiceActGetTurnHand: {
-              action: 'Click',
-              target: handPosition,
-              post_wait_freezes: {
-                rate_limit: 50,
-                target: [66, 35, 337, 45],
-                threshold: 0.9,
-                time: 50,
-              },
-            },
-          })
-        )?.completed
-      ) {
-        Logger.warn(`Failed to click on hand card ${JSON.stringify(handPosition)}`);
-        break;
+    Logger.info(self.name);
+
+    const optimalPlay = findOptimalPlay(
+      this._gameData.self.hand,
+      this._gameData.self.playPoints.current,
+    );
+    if (!optimalPlay) {
+      Logger.info('No optimal play found');
+      if (!(await endTurn(self.context))) {
+        Logger.warn('Failed to end turn');
+        return false;
       }
-      const cardInfo = await getCardInfoFromName(self.context);
-      if (!cardInfo) {
-        Logger.warn(`Card info not found for hand card ${JSON.stringify(handPosition)}`);
-        break;
-      }
-      cardInfo.position = {
-        x: handPosition[0],
-        y: handPosition[1],
-      };
-      currentHand.push(cardInfo);
+      self.context.override_next('processTurn', ['checkOpponentTurn']);
+      return true;
     }
-    Logger.info('Current hand cards: ', currentHand);
-    if (currentHand.length !== handCount) {
-      Logger.warn(`Expected ${handCount} cards in hand, but got ${currentHand.length}`);
-      return null;
+
+    Logger.info('Optimal play found: ', optimalPlay);
+    if (!optimalPlay.position) {
+      Logger.warn('Optimal play card has no position');
+      return false;
     }
-    this._gameData.self.hand = currentHand;
-    return [EMPTY_RECT, ''];
+
+    if (
+      !(await swipeCardByFlatRect(
+        self.context,
+        [optimalPlay.position.x, optimalPlay.position.y, 1, 1],
+        [SCREEN_LONG_SIDE / 2, SCREEN_SHORT_SIDE / 2, 1, 1],
+      ))
+    ) {
+      Logger.warn('Failed to swipe on optimal play card: ', optimalPlay);
+      return false;
+    }
+
+    return true;
   }
 }

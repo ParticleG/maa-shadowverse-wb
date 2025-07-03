@@ -12,6 +12,10 @@ export interface CardInfo {
 
 export interface PlayerInfo {
   health?: number;
+  playPoints?: {
+    current: number;
+    max: number;
+  };
   deckCount?: number;
   hand?: CardInfo[];
 }
