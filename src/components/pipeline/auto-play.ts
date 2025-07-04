@@ -2,11 +2,11 @@ import type { Task } from 'src/types/service/maa/types';
 
 export const AUTO_PLAY: Task = {
   processTurn: {
-    next: ['processTurn'],
+    next: [],
     recognition: 'Custom',
     custom_recognition: 'recProcessTurn',
-    action: 'Custom',
-    custom_action: 'actProcessTurn',
+    // action: 'Custom',
+    // custom_action: 'actProcessTurn',
   },
   checkStageSwapInitialCards: {
     next: ['doMulligan'],

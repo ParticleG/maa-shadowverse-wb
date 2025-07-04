@@ -10,6 +10,8 @@ export interface CardInfo {
   };
 }
 
+export type NullableCardInfo = CardInfo | null;
+
 export interface PlayerInfo {
   health?: number;
   playPoints?: {
@@ -17,7 +19,8 @@ export interface PlayerInfo {
     max: number;
   };
   deckCount?: number;
-  hand?: CardInfo[];
+  field?: NullableCardInfo[];
+  hand?: NullableCardInfo[];
 }
 
 export interface GameData {

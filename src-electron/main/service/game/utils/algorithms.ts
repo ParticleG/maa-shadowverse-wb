@@ -1,16 +1,20 @@
 import Logger from 'electron-log';
 
-import type { CardInfo } from 'src/types/service/game/types';
+import type { CardInfo, NullableCardInfo } from 'src/types/service/game/types';
 
-export const decideMulliganByCost = (initialHand: CardInfo[]): CardInfo[] => {
+export const decideMulliganByCost = (initialHand: NullableCardInfo[]): CardInfo[] => {
+  const validHandCards = initialHand.filter(
+    (card): card is CardInfo => card !== null && card.cost !== undefined,
+  );
+
   const cardsToKeep: CardInfo[] = [];
   const cardsToConsider: CardInfo[] = [];
   const cardsToSwap: CardInfo[] = [];
 
-  for (const card of initialHand) {
+  for (const card of validHandCards) {
     if (card.cost === 1 || card.cost === 2) {
       cardsToKeep.push(card);
-    } else if (card.cost === 3) {
+    } else if (card?.cost === 3) {
       cardsToConsider.push(card);
     } else {
       cardsToSwap.push(card);
@@ -50,10 +54,10 @@ export const decideMulliganByCost = (initialHand: CardInfo[]): CardInfo[] => {
 };
 
 export const findOptimalPlay = (
-  currentHand: CardInfo[],
+  currentHand: NullableCardInfo[],
   currentPlayPoint: number,
 ): CardInfo | undefined => {
   return currentHand
-    .filter((card) => card.cost <= currentPlayPoint)
+    .filter((card): card is CardInfo => card !== null && card.cost <= currentPlayPoint)
     .sort((a, b) => b.cost - a.cost)[0];
 };

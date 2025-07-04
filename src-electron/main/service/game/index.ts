@@ -2,7 +2,11 @@ import { CustomActionSelf, CustomRecognizerSelf, api, Resource } from '@maaxyz/m
 import Logger from 'electron-log';
 import { injectable } from 'inversify';
 
-import { getCurrentHand, getInitialHand } from 'app/src-electron/main/service/game/utils';
+import {
+  getCurrentFieldInfo,
+  getCurrentHand,
+  getInitialHand,
+} from 'app/src-electron/main/service/game/utils';
 import {
   decideMulliganByCost,
   findOptimalPlay,
@@ -14,7 +18,7 @@ import {
 } from 'app/src-electron/main/service/game/utils/actions';
 import {
   getOrderOfPlay,
-  getPlayPoints,
+  getPlayPointInfo,
 } from 'app/src-electron/main/service/game/utils/recognitions';
 import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
@@ -93,13 +97,22 @@ export class GameService implements GameServiceTrait {
       return null;
     }
 
-    const playPoints = await getPlayPoints(self.context, self.image);
+    const playPoints = await getPlayPointInfo(self.context, self.image);
     if (playPoints === undefined) {
       Logger.warn('Failed to get play points');
-      return [EMPTY_RECT, ''];
+      return null;
     }
     this._gameData.self.playPoints = playPoints;
     Logger.info(`Play points: ${playPoints.current}/${playPoints.max}`);
+
+    const fieldInfo = await getCurrentFieldInfo(self);
+    if (!fieldInfo) {
+      Logger.warn('Failed to get current field info');
+      return [EMPTY_RECT, ''];
+    }
+    Logger.info(`Field info: ${JSON.stringify(fieldInfo, null, 2)}`);
+    this._gameData.self.field = fieldInfo.self;
+    this._gameData.opponent.field = fieldInfo.opponent;
 
     const currentHand = await getCurrentHand(self);
     if (!currentHand) {
@@ -109,7 +122,7 @@ export class GameService implements GameServiceTrait {
     Logger.info(`Current hand: `, currentHand);
     this._gameData.self.hand = currentHand;
 
-    if (!currentHand.find((card) => card.cost <= playPoints.current)) {
+    if (!currentHand.find((card) => card && card.cost <= playPoints.current)) {
       Logger.warn('No playable cards in hand');
       if (!(await endTurn(self.context))) {
         Logger.warn('Failed to end turn');

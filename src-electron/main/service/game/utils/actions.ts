@@ -20,7 +20,7 @@ export const cancelAll = async (context: Context) => {
   return true;
 };
 
-export const clickCardByFlatRect = async (
+export const clickCardEntityByFlatRect = async (
   context: Context,
   flatRect: api.FlatRect,
 ): Promise<boolean | undefined> => {

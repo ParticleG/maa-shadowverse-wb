@@ -27,3 +27,8 @@ export const useService = <T extends ServiceType>(serviceName: T) =>
           window.service.invoke(serviceName, functionName, ...payloads),
     },
   ) as AsyncClass<ServiceTrait<T>>;
+
+export const sleep = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
