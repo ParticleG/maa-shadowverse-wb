@@ -1,4 +1,4 @@
-import type { Context } from '@maaxyz/maa-node';
+import type { api, Context, RecoDetail } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
 
 import { CARD_INFO_MAP } from 'src/types/service/game/card';
@@ -11,6 +11,35 @@ import {
 import type { CardInfo, PlayerInfo } from 'src/types/service/game/types';
 import { runCustomRecognition } from 'app/src-electron/main/service/game/utils/common';
 
+const removeDuplicateDetails = (
+  details: RecoDetail['filtered'] | undefined,
+  threshold: api.FlatRect,
+): RecoDetail['filtered'] => {
+  const result: RecoDetail['filtered'] = [];
+  if (!details || details.length === 0) {
+    return result;
+  }
+  for (const current of details) {
+    let isUnique = true;
+    for (const existing of result) {
+      if (
+        Math.abs(current.box[0] - existing.box[0]) < threshold[0] &&
+        Math.abs(current.box[1] - existing.box[1]) < threshold[1] &&
+        Math.abs(current.box[2] - existing.box[2]) < threshold[2] &&
+        Math.abs(current.box[3] - existing.box[3]) < threshold[3]
+      ) {
+        isUnique = false;
+        break;
+      }
+    }
+    if (isUnique) {
+      result.push(current);
+    }
+  }
+
+  return result;
+};
+
 export const getAmuletCountInfo = async (
   context: Context,
   image: ArrayBuffer,
@@ -20,13 +49,17 @@ export const getAmuletCountInfo = async (
       recognition: 'TemplateMatch',
       roi: [180, 150, 890, 200],
       template: ['amulet_bronze_border.png', 'amulet_gold_border.png', 'amulet_silver_border.png'],
-      threshold: 0.85,
       green_mask: true,
     },
   });
+  const amuletDeduplicatedDetail = removeDuplicateDetails(
+    amuletResult?.detail.filtered,
+    [10, 10, 10, 10],
+  );
+  Logger.info(amuletDeduplicatedDetail);
   return {
-    self: amuletResult?.detail.filtered.filter((result) => result.box[1] > 250).length ?? 0,
-    opponent: amuletResult?.detail.filtered.filter((result) => result.box[1] <= 250).length ?? 0,
+    self: amuletDeduplicatedDetail.filter((result) => result.box[1] > 250).length,
+    opponent: amuletDeduplicatedDetail.filter((result) => result.box[1] <= 250).length,
   };
 };
 

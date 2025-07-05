@@ -62,11 +62,13 @@ export const getCurrentFieldInfo = async (self: CustomRecognizerSelf) => {
     Logger.warn('Failed to get self follower count');
     return;
   }
+  Logger.info(`Minion counts: ${minionCountInfo.self}:${minionCountInfo.opponent}`);
   const amuletCountInfo = await getAmuletCountInfo(self.context, self.image);
   if (amuletCountInfo === undefined) {
     Logger.warn('Failed to get self spell and amulet count');
     return;
   }
+  Logger.info(`Amulet counts: ${amuletCountInfo.self}:${amuletCountInfo.opponent}`);
   const selfPermanentPositions =
     SELF_PERMANENT_POSITIONS_MAP[minionCountInfo.self + amuletCountInfo.self];
   if (!selfPermanentPositions) {

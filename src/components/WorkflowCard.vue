@@ -77,7 +77,7 @@ const selectWorkflow = (pipeline: Workflow) => {
 </script>
 
 <template>
-  <q-card class="column">
+  <q-card bordered flat class="column">
     <q-splitter class="col-grow" v-model="splitterRatio">
       <template v-slot:before>
         <div class="column full-height">
@@ -111,18 +111,22 @@ const selectWorkflow = (pipeline: Workflow) => {
       <template v-slot:after>
         <div class="column full-height">
           <q-card-section class="col-grow column">
-            <div
-              v-if="!selectedWorkflow"
-              class="self-center text-center text-h4 text-grey text-italic"
-            >
+            <div v-if="!selectedWorkflow" class="text-center text-h4 text-grey text-italic">
               {{ i18n('labels.noWorkflow') }}
             </div>
-            <q-stepper v-else ref="stepper" animated vertical v-model="stepIndex">
+            <q-stepper
+              v-else
+              active-icon="play_arrow"
+              animated
+              bordered
+              error-icon="warning"
+              flat
+              vertical
+              v-model="stepIndex"
+            >
               <q-step
                 v-for="(pipeline, index) in selectedWorkflow.pipelines"
                 :key="index"
-                active-icon="play_arrow"
-                error-icon="warning"
                 :done="stepIndex > index"
                 :error="isError && Math.floor(stepIndex) === index"
                 :icon="pipeline.icon ?? 'schema'"

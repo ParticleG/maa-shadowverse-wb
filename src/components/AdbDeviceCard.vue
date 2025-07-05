@@ -90,7 +90,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <q-card class="column">
+  <q-card bordered flat class="column">
     <q-card-section>
       <div class="text-weight-medium">
         {{ i18n('labels.title') }}

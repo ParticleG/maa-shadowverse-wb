@@ -22,7 +22,8 @@ export const runCustomAction = async (
     Logger.error('No pipeline override provided');
     return false;
   }
-  return !!(await context.run_action(pipelineBeginNodeName, EMPTY_RECT, '', pipelineOverride))?.completed;
+  return !!(await context.run_action(pipelineBeginNodeName, EMPTY_RECT, '', pipelineOverride))
+    ?.completed;
 };
 
 export const runCustomRecognition = async (

@@ -244,10 +244,6 @@ export enum CardNameChinese {
   Dimension_Clim = '超越次元',
 }
 
-export const CARD_NAME_CHINESE_CHARACTERS = Array.from(
-  new Set(Object.values(CardNameChinese).join('').split('')),
-);
-
 export const CARD_NAME_CHINESE_MAP: Record<CardNameChinese, CardName> = {
   [CardNameChinese.Skeleton]: CardName.Skeleton,
   [CardNameChinese.Puppet]: CardName.Puppet,
@@ -265,7 +261,7 @@ export const CARD_NAME_CHINESE_MAP: Record<CardNameChinese, CardName> = {
   [CardNameChinese.May_Journey_Elf]: CardName.May_Journey_Elf,
   [CardNameChinese.Magic_Sediment]: CardName.Magic_Sediment,
   [CardNameChinese.Luminous_Commander]: CardName.Luminous_Commander,
-  [CardNameChinese.Looking_Smart_]: CardName.Looking_Smart_,
+  [CardNameChinese.Looking_Smart_]: CardName.Looking_Smart,
   [CardNameChinese.Lilith_Enchanting_Succubus]: CardName.Lilith_Enchanting_Succubus,
   [CardNameChinese.Good_Fairy_of_the_Pond]: CardName.Good_Fairy_of_the_Pond,
   [CardNameChinese.Goblin]: CardName.Goblin,
@@ -489,5 +485,5 @@ export const CARD_NAME_CHINESE_MAP: Record<CardNameChinese, CardName> = {
   [CardNameChinese.Genesis_Dragon_Reborn]: CardName.Genesis_Dragon_Reborn,
   [CardNameChinese.Blaze_Destroyer]: CardName.Blaze_Destroyer,
   [CardNameChinese.Astaroth_s_Reckoning]: CardName.Astaroth_s_Reckoning,
-  [CardNameChinese.Dimension_Clim]: CardName.Dimension_Clim,
+  [CardNameChinese.Dimension_Clim]: CardName.Dimension_Climb,
 };
