@@ -16,13 +16,13 @@ export default {
         disconnectError: 'Disconnection error: {deviceName}',
       },
     },
-    PipelineCard: {
+    WorkflowCard: {
       labels: {
-        title: 'Available Pipelines',
-        noPipelineSelected: 'No pipeline selected',
-        runPipeline: 'Run Pipeline',
+        title: 'Available Workflows',
+        noWorkflow: 'No workflow selected',
+        runWorkflow: 'Run workflow',
       },
-      pipelines: {
+      workflows: {
         autoRankBattle: {
           name: 'Auto Rank Battle',
           description: 'Navigate to rank battle and begin auto play',
@@ -36,7 +36,7 @@ export default {
           description: 'Launch the app and navigate to the main screen',
         },
       },
-      tasks: {
+      pipelines: {
         acquireDailyPack: {
           name: 'Acquire Daily Pack',
           description: 'Detect and acquire the daily pack from the game',
@@ -59,11 +59,9 @@ export default {
         }
       },
       notifications: {
-        pipelineSuccess: 'Pipeline completed successfully: {pipelineName}',
-        pipelineFailure: 'Pipeline failed: {pipelineName}',
-        taskSuccess: 'Task completed successfully: {taskName}',
-        taskFailure: 'Task failed: {taskName}',
-        taskError: 'Task error: {error}',
+        pipelineError: 'Pipeline "{name}" threw an error',
+        workflowFailure: 'Workflow "{name}" failed',
+        workflowSuccess: 'Workflow "{name}" completed successfully',
       },
     },
     ThemeButton: {

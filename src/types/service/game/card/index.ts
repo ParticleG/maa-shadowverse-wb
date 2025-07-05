@@ -244,6 +244,11 @@ export enum CardName {
   Dimension_Clim = 'Dimension Climb',
 }
 
+export enum CardType {
+  Amulet = 'Amulet',
+  Minion = 'Minion',
+}
+
 export const CARD_INFO_MAP: Record<CardName, CardInfo> = {
   [CardName.Skeleton]: {
     name: CardName.Skeleton,

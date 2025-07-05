@@ -9,42 +9,24 @@ import {
   OrderOfPlayChinese,
 } from 'src/types/service/game/field/chinese';
 import type { CardInfo, PlayerInfo } from 'src/types/service/game/types';
+import { runCustomRecognition } from 'app/src-electron/main/service/game/utils/common';
 
-export const getAmuletAndSpellCountInfo = async (
+export const getAmuletCountInfo = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<{ self: number; opponent: number } | undefined> => {
-  const selfAmuletAndSpellCountResult = await context.run_recognition(
-    'GameServiceGetSelfAmuletAndSpellCount',
-    image,
-    {
-      GameServiceGetSelfAmuletAndSpellCount: {
-        recognition: 'TemplateMatch',
-        roi: [180, 290, 890, 80],
-        template: [
-          'amulet_and_spell_bronze_border.png',
-          'amulet_and_spell_gold_border.png',
-          'amulet_and_spell_silver_border.png',
-        ],
-        green_mask: true,
-      },
+  const amuletResult = await runCustomRecognition(context, image, {
+    GameServiceFindAmulet: {
+      recognition: 'TemplateMatch',
+      roi: [180, 150, 890, 200],
+      template: ['amulet_bronze_border.png', 'amulet_gold_border.png', 'amulet_silver_border.png'],
+      threshold: 0.85,
+      green_mask: true,
     },
-  );
-  const opponentAmuletAndSpellCountResult = await context.run_recognition(
-    'GameServiceGetOpponentAmuletAndSpellCount',
-    image,
-    {
-      GameServiceGetOpponentAmuletAndSpellCount: {
-        recognition: 'TemplateMatch',
-        roi: [180, 140, 890, 80],
-        template: 'amulet_and_spell_border.png',
-        green_mask: true,
-      },
-    },
-  );
+  });
   return {
-    self: selfAmuletAndSpellCountResult?.detail.filtered.length ?? 0,
-    opponent: opponentAmuletAndSpellCountResult?.detail.filtered.length ?? 0,
+    self: amuletResult?.detail.filtered.filter((result) => result.box[1] > 250).length ?? 0,
+    opponent: amuletResult?.detail.filtered.filter((result) => result.box[1] <= 250).length ?? 0,
   };
 };
 
@@ -52,12 +34,16 @@ export const getCardInfoByName = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<CardInfo | undefined> => {
-  const result = await context.run_recognition('GameServiceGetCardName', image, {
+  const result = await runCustomRecognition(context, image, {
     GameServiceGetCardName: {
       recognition: 'OCR',
       roi: [67, 39, 253, 39],
       expected: Object.values(CardNameChinese),
-      replace: [['毁灭创造物Y', '毁灭创造物γ']],
+      replace: [
+        ['毁灭创造物a', '毁灭创造物α'],
+        ['毁灭创造物B', '毁灭创造物β'],
+        ['毁灭创造物Y', '毁灭创造物γ'],
+      ],
     },
   });
   if (!result || !result.hit) {
@@ -77,49 +63,21 @@ export const getCardInfoByName = async (
   return structuredClone(CARD_INFO_MAP[cardStandardName]);
 };
 
-export const getFollowerCountInfo = async (
+export const getMinionCountInfo = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<{ self: number; opponent: number } | undefined> => {
-  const selfFollowerAtkResult = await context.run_recognition(
-    'GameServiceGetSelfFollowerAtk',
-    image,
-    {
-      GameServiceGetSelfFollowerAtk: {
-        recognition: 'TemplateMatch',
-        roi: [180, 410, 890, 80],
-        template: 'follower_atk.png',
-        green_mask: true,
-      },
+  const minionResult = await runCustomRecognition(context, image, {
+    GameServiceFindMinion: {
+      recognition: 'TemplateMatch',
+      roi: [180, 245, 890, 240],
+      template: 'minion_atk.png',
+      green_mask: true,
     },
-  );
-  if (!selfFollowerAtkResult || !selfFollowerAtkResult.hit) {
-    Logger.warn(
-      `Self follower count not found or not in expected format: ${JSON.stringify(selfFollowerAtkResult, null, 2)}`,
-    );
-    return;
-  }
-  const opponentFollowerAtkResult = await context.run_recognition(
-    'GameServiceGetOpponentFollowerAtk',
-    image,
-    {
-      GameServiceGetOpponentFollowerAtk: {
-        recognition: 'TemplateMatch',
-        roi: [180, 245, 890, 80],
-        template: 'follower_atk.png',
-        green_mask: true,
-      },
-    },
-  );
-  if (!opponentFollowerAtkResult || !opponentFollowerAtkResult.hit) {
-    Logger.warn(
-      `Opponent follower count not found or not in expected format: ${JSON.stringify(opponentFollowerAtkResult, null, 2)}`,
-    );
-    return;
-  }
+  });
   return {
-    self: selfFollowerAtkResult.detail.filtered.length,
-    opponent: opponentFollowerAtkResult.detail.filtered.length,
+    self: minionResult?.detail.filtered.filter((result) => result.box[1] > 380).length ?? 0,
+    opponent: minionResult?.detail.filtered.filter((result) => result.box[1] <= 380).length ?? 0,
   };
 };
 
@@ -127,26 +85,26 @@ export const getHandCount = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<number | undefined> => {
-  const handCountResult = await context.run_recognition('GameServiceGetHandCount', image, {
+  const handCountResult = await runCustomRecognition(context, image, {
     GameServiceGetHandCount: {
       recognition: 'OCR',
-      roi: [54, 664, 29, 37],
+      roi: [54, 668, 29, 31],
       expected: '\\d',
     },
   });
   if (!handCountResult || !handCountResult.hit || handCountResult.detail.filtered.length !== 1) {
     Logger.warn(
-      `Deck count not found or not in expected format: ${JSON.stringify(handCountResult, null, 2)}`,
+      `Hand count not found or not in expected format: ${JSON.stringify(handCountResult, null, 2)}`,
     );
     return;
   }
   const deckCount = Number(handCountResult.detail.filtered[0]?.text);
   if (isNaN(deckCount)) {
-    Logger.warn(`Deck count is not a number: ${handCountResult.detail.filtered[0]?.text}`);
+    Logger.warn(`Hand count is not a number: ${handCountResult.detail.filtered[0]?.text}`);
     return;
   }
   if (deckCount < 0 || deckCount > 10) {
-    Logger.warn(`Deck count is out of expected range: ${deckCount}`);
+    Logger.warn(`Hand count is out of expected range: ${deckCount}`);
     return;
   }
   return deckCount;
@@ -156,7 +114,7 @@ export const getOrderOfPlay = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<OrderOfPlay | undefined> => {
-  const result = await context.run_recognition('GameServiceGetOrderOfPlay', image, {
+  const result = await runCustomRecognition(context, image, {
     GameServiceGetOrderOfPlay: {
       recognition: 'OCR',
       roi: [1116, 626, 71, 45],
@@ -184,30 +142,26 @@ export const getPlayPointInfo = async (
   context: Context,
   image: ArrayBuffer,
 ): Promise<PlayerInfo['playPoints'] | undefined> => {
-  const availablePPResult = await context.run_recognition(
-    'GameServiceGetAvailablePlayPoints',
-    image,
-    {
-      GameServiceGetAvailablePlayPoints: {
-        recognition: 'TemplateMatch',
-        roi: [1075, 451, 177, 19],
-        template: 'play_point_available.png',
-        threshold: 0.9,
-        green_mask: true,
-      },
+  const availablePPResult = await runCustomRecognition(context, image, {
+    GameServiceFindAvailablePlayPoint: {
+      recognition: 'TemplateMatch',
+      roi: [1075, 451, 177, 19],
+      template: 'play_point_available.png',
+      threshold: 0.85,
+      green_mask: true,
     },
-  );
+  });
   const availablePP = availablePPResult?.detail.filtered.length ?? 0;
   if (availablePP < 0 || availablePP > 10) {
     Logger.warn(`Available play points is out of expected range: ${availablePP}`);
     return;
   }
-  const usedPPResult = await context.run_recognition('GameServiceGetUsedPlayPoints', image, {
-    GameServiceGetUsedPlayPoints: {
+  const usedPPResult = await runCustomRecognition(context, image, {
+    GameServiceFindUsedPlayPoint: {
       recognition: 'TemplateMatch',
       roi: [1075, 451, 177, 19],
       template: 'play_point_used.png',
-      threshold: 0.9,
+      threshold: 0.85,
       green_mask: true,
     },
   });

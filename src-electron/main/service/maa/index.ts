@@ -6,7 +6,7 @@ import { GameService } from 'app/src-electron/main/service/game';
 import { LOG_PATH, RESOURCES_PATH } from 'app/src-electron/main/service/maa/constants';
 
 import { MaaServiceTrait } from 'src/types/service/maa';
-import { AdbDevice, Task } from 'src/types/service/maa/types';
+import { AdbDevice, Pipeline } from 'src/types/service/maa/types';
 import { isValidIpPort } from 'src/utils/common';
 import { ServiceType } from 'src/types/service';
 
@@ -118,14 +118,14 @@ export class MaaService implements MaaServiceTrait {
     return false;
   }
 
-  async runExistTask(taskName: string): Promise<boolean> {
+  async runExistPipeline(pipelineName: string): Promise<boolean> {
     const tasker = await this._createTasker();
-    return await tasker.post_task(taskName).wait().succeeded;
+    return await tasker.post_task(pipelineName).wait().succeeded;
   }
 
-  async runNewTask(task: Task): Promise<boolean> {
+  async runNewPipeline(pipeline: Pipeline): Promise<boolean> {
     const tasker = await this._createTasker();
-    return await tasker.post_task(Object.keys(task)[0]!, task).wait().succeeded;
+    return await tasker.post_task(Object.keys(pipeline)[0]!, pipeline).wait().succeeded;
   }
 
   async create() {

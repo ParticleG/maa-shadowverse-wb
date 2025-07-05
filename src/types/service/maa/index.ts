@@ -1,4 +1,4 @@
-import type { AdbDevice, Task } from 'src/types/service/maa/types';
+import type { AdbDevice, Pipeline } from 'src/types/service/maa/types';
 
 export interface MaaServiceTrait {
   listDevices(): Promise<AdbDevice[]>;
@@ -7,7 +7,7 @@ export interface MaaServiceTrait {
 
   disconnect(): boolean;
 
-  runExistTask(taskName: string): Promise<boolean>;
+  runExistPipeline(pipelineName: string): Promise<boolean>;
 
-  runNewTask(task: Task): Promise<boolean>;
+  runNewPipeline(pipeline: Pipeline): Promise<boolean>;
 }

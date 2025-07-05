@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import PipelineCard from 'components/PipelineCard.vue';
+import WorkflowCard from 'components/WorkflowCard.vue';
 
 import type { AdbDevice } from 'src/types/service/maa/types';
 import { i18nSubPath } from 'src/utils/common';
@@ -20,7 +20,7 @@ const connectedDevice = ref<AdbDevice>();
       </div>
       <div class="col-grow row full-width q-gutter-x-md">
         <AdbDeviceCard class="col-auto" v-model="connectedDevice" />
-        <PipelineCard class="col-grow" :disabled="!connectedDevice" />
+        <WorkflowCard class="col-grow" :disabled="!connectedDevice" />
       </div>
     </div>
   </q-page>

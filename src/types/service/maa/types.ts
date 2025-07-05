@@ -137,19 +137,19 @@ type TaskRecognitionConfig =
   | TaskRecognitionConfigCustom;
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#donothing
-interface TaskCommandActionDoNothing {
+interface TaskActionConfigDoNothing {
   action?: 'DoNothing'; // Default: 'DoNothing'
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#click
-interface TaskCommandActionClick {
+interface TaskActionConfigClick {
   action: 'Click';
   target?: true | string | number[]; // Default: true
   target_offset?: number[]; // Default: [0, 0, 0, 0]
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#longpress
-interface TaskCommandActionLongPress {
+interface TaskActionConfigLongPress {
   action: 'LongPress';
   target?: true | string | number[]; // Default: true
   target_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -157,7 +157,7 @@ interface TaskCommandActionLongPress {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#swipe
-interface TaskCommandActionSwipe {
+interface TaskActionConfigSwipe {
   action: 'Swipe';
   begin?: true | string | number[]; // Default: true
   begin_offset?: number[]; // Default: [0, 0, 0, 0]
@@ -167,42 +167,42 @@ interface TaskCommandActionSwipe {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#multiswipe
-interface TaskCommandActionMultiSwipe {
+interface TaskActionConfigMultiSwipe {
   action: 'MultiSwipe';
-  swipes: Omit<TaskCommandActionSwipe, 'action'>[]; // Array of swipe actions
+  swipes: Omit<TaskActionConfigSwipe, 'action'>[]; // Array of swipe actions
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#key
-interface TaskCommandActionKey {
+interface TaskActionConfigKey {
   action: 'Key';
   key: number | number[]; // Keycode or array of Keycodes to press
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#inputtext
-interface TaskCommandActionInputText {
+interface TaskActionConfigInputText {
   action: 'InputText';
   input_text: string; // Text to input
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#startapp
-interface TaskCommandActionStartApp {
+interface TaskActionConfigStartApp {
   action: 'StartApp';
   package: string; // Package name of the app to start
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#stopapp
-interface TaskCommandActionStopApp {
+interface TaskActionConfigStopApp {
   action: 'StopApp';
   package: string; // Package name of the app to stop
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#stoptask
-interface TaskCommandActionStopTask {
+interface TaskActionConfigStopTask {
   action: 'StopTask';
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#command
-interface TaskCommandActionCommand {
+interface TaskActionConfigCommand {
   action: 'Command';
   exec: string; // Executable path
   args?: string[]; // Arguments for the command
@@ -210,7 +210,7 @@ interface TaskCommandActionCommand {
 }
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md#custom-1
-interface TaskCommandActionCustom {
+interface TaskActionConfigCustom {
   action: 'Custom';
   custom_action: string; // Custom action name
   custom_action_param?: object; // Default: {}
@@ -218,21 +218,29 @@ interface TaskCommandActionCustom {
   target_offset?: number[]; // Default: [0, 0, 0, 0]
 }
 
-type TaskCommandAction =
-  | TaskCommandActionDoNothing
-  | TaskCommandActionClick
-  | TaskCommandActionLongPress
-  | TaskCommandActionSwipe
-  | TaskCommandActionMultiSwipe
-  | TaskCommandActionKey
-  | TaskCommandActionInputText
-  | TaskCommandActionStartApp
-  | TaskCommandActionStopApp
-  | TaskCommandActionStopTask
-  | TaskCommandActionCommand
-  | TaskCommandActionCustom;
+type TaskActionConfig =
+  | TaskActionConfigDoNothing
+  | TaskActionConfigClick
+  | TaskActionConfigLongPress
+  | TaskActionConfigSwipe
+  | TaskActionConfigMultiSwipe
+  | TaskActionConfigKey
+  | TaskActionConfigInputText
+  | TaskActionConfigStartApp
+  | TaskActionConfigStopApp
+  | TaskActionConfigStopTask
+  | TaskActionConfigCommand
+  | TaskActionConfigCustom;
 
 // https://github.com/MaaXYZ/MaaFramework/blob/main/docs/zh_cn/3.1-%E4%BB%BB%E5%8A%A1%E6%B5%81%E6%B0%B4%E7%BA%BF%E5%8D%8F%E8%AE%AE.md
-export interface Task {
-  [key: string]: TaskCommonConfig & TaskRecognitionConfig & TaskCommandAction;
+export interface Pipeline {
+  [key: string]: TaskCommonConfig & TaskRecognitionConfig & TaskActionConfig;
+}
+
+export interface PipelineOverrideAction {
+  [key: string]: TaskCommonConfig & TaskActionConfig;
+}
+
+export interface PipelineOverrideRecognition {
+  [key: string]: TaskCommonConfig & TaskRecognitionConfig;
 }

@@ -1,6 +1,6 @@
-import type { Task } from 'src/types/service/maa/types';
+import type { Pipeline } from 'src/types/service/maa/types';
 
-export const AUTO_PLAY: Task = {
+export const AUTO_PLAY: Pipeline = {
   processTurn: {
     next: [],
     recognition: 'Custom',

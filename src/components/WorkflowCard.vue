@@ -1,0 +1,155 @@
+<script setup lang="ts">
+import { useQuasar } from 'quasar';
+import { ref, toRaw } from 'vue';
+
+import type { Workflow } from 'components/pipeline';
+import { BUILTIN_WORKFLOWS } from 'components/pipeline';
+
+import { ServiceType } from 'src/types/service';
+import { i18nSubPath, useService } from 'src/utils/common';
+
+const i18n = i18nSubPath('components.WorkflowCard');
+const { notify } = useQuasar();
+const maaService = useService(ServiceType.maa);
+
+const props = withDefaults(
+  defineProps<{
+    disabled?: boolean;
+  }>(),
+  {
+    disabled: false,
+  },
+);
+
+const isError = ref(false);
+const isRunning = ref(false);
+const selectedWorkflow = ref<Workflow>();
+const splitterRatio = ref(30);
+const stepIndex = ref(-1);
+
+const runWorkflow = async () => {
+  if (props.disabled || !selectedWorkflow.value) {
+    return;
+  }
+
+  const workflowName = i18n(`workflows.${selectedWorkflow.value.name}.name`);
+
+  isError.value = false;
+  isRunning.value = true;
+  stepIndex.value = -1;
+  for (const pipeline of selectedWorkflow.value.pipelines) {
+    stepIndex.value++;
+    try {
+      isError.value = !(await maaService.runNewPipeline(toRaw(pipeline.data)));
+    } catch (error) {
+      isError.value = true;
+      notify({
+        type: 'negative',
+        message: i18n('notifications.pipelineError', {
+          name: i18n(`pipelines.${pipeline.name}.name`),
+        }),
+        caption: (error as Error).message,
+      });
+    }
+    if (isError.value) {
+      stepIndex.value += 0.5;
+      break;
+    }
+  }
+  notify({
+    type: isError.value ? 'negative' : 'positive',
+    message: i18n(`notifications.workflow${isError.value ? 'Failure' : 'Success'}`, {
+      name: workflowName,
+    }),
+  });
+  isRunning.value = false;
+};
+
+const selectWorkflow = (pipeline: Workflow) => {
+  if (isRunning.value || selectedWorkflow.value?.name === pipeline.name) {
+    return;
+  }
+  isError.value = false;
+  selectedWorkflow.value = pipeline;
+  splitterRatio.value = 30;
+  stepIndex.value = -1;
+};
+</script>
+
+<template>
+  <q-card class="column">
+    <q-splitter class="col-grow" v-model="splitterRatio">
+      <template v-slot:before>
+        <div class="column full-height">
+          <q-card-section>
+            <div class="text-weight-medium">
+              {{ i18n('labels.title') }}
+            </div>
+          </q-card-section>
+          <q-separator />
+          <q-scroll-area class="col-grow">
+            <q-list separator>
+              <q-item
+                v-for="workflow in BUILTIN_WORKFLOWS"
+                :key="workflow.name"
+                :active="selectedWorkflow?.name === workflow.name"
+                :clickable="!isRunning"
+                :disable="isRunning"
+                @click="selectWorkflow(workflow)"
+              >
+                <q-item-section avatar class="q-pr-none q-mr-none">
+                  <q-avatar :icon="workflow.icon ?? 'auto_awesome_motion'" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ i18n(`workflows.${workflow.name}.name`) }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-scroll-area>
+        </div>
+      </template>
+      <template v-slot:after>
+        <div class="column full-height">
+          <q-card-section class="col-grow column">
+            <div
+              v-if="!selectedWorkflow"
+              class="self-center text-center text-h4 text-grey text-italic"
+            >
+              {{ i18n('labels.noWorkflow') }}
+            </div>
+            <q-stepper v-else ref="stepper" animated vertical v-model="stepIndex">
+              <q-step
+                v-for="(pipeline, index) in selectedWorkflow.pipelines"
+                :key="index"
+                active-icon="play_arrow"
+                error-icon="warning"
+                :done="stepIndex > index"
+                :error="isError && Math.floor(stepIndex) === index"
+                :icon="pipeline.icon ?? 'schema'"
+                :name="index"
+                :title="i18n(`pipelines.${pipeline.name}.name`)"
+              >
+                <div>
+                  {{ pipeline.description ?? i18n(`pipelines.${pipeline.name}.description`) }}
+                </div>
+              </q-step>
+            </q-stepper>
+          </q-card-section>
+          <q-separator />
+          <q-card-actions align="center">
+            <q-btn
+              color="primary"
+              :disable="disabled || !selectedWorkflow"
+              :loading="isRunning"
+              :label="i18n('labels.runWorkflow')"
+              no-caps
+              @click="runWorkflow"
+            />
+          </q-card-actions>
+        </div>
+      </template>
+    </q-splitter>
+  </q-card>
+</template>
+
+<style scoped></style>

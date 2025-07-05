@@ -1,6 +1,6 @@
-import type { Task } from 'src/types/service/maa/types';
+import type { Pipeline } from 'src/types/service/maa/types';
 
-export const START_RANK_BATTLE: Task = {
+export const START_RANK_BATTLE: Pipeline = {
   clickRankBattle: {
     next: ['checkNoValidDeck', 'clickStartBattle'],
     recognition: 'OCR',

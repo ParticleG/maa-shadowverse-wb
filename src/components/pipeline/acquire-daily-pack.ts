@@ -1,7 +1,7 @@
-import type { Task } from 'src/types/service/maa/types';
+import type { Pipeline } from 'src/types/service/maa/types';
 import { SCREEN_LONG_SIDE, SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
 
-export const ACQUIRE_DAILY_PACK: Task = {
+export const ACQUIRE_DAILY_PACK: Pipeline = {
   checkExclamationPointOverShopIcon: {
     next: ['clickBuyPackCard'],
     timeout: 5000,

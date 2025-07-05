@@ -37,8 +37,8 @@ export class GameService implements GameServiceTrait {
     };
   }
 
-  test(): void {
-    console.log('GameService is working!');
+  getGameData(): GameData {
+    return this._gameData;
   }
 
   register(resource: Resource) {
@@ -110,7 +110,7 @@ export class GameService implements GameServiceTrait {
       Logger.warn('Failed to get current field info');
       return [EMPTY_RECT, ''];
     }
-    Logger.info(`Field info: ${JSON.stringify(fieldInfo, null, 2)}`);
+    Logger.info(`Field count: ${fieldInfo.self.length}:${fieldInfo.opponent.length}`);
     this._gameData.self.field = fieldInfo.self;
     this._gameData.opponent.field = fieldInfo.opponent;
 
@@ -119,7 +119,7 @@ export class GameService implements GameServiceTrait {
       Logger.warn('Failed to get current hand');
       return null;
     }
-    Logger.info(`Current hand: `, currentHand);
+    Logger.info(`Hand count: `, currentHand.length);
     this._gameData.self.hand = currentHand;
 
     if (!currentHand.find((card) => card && card.cost <= playPoints.current)) {

@@ -1,7 +1,7 @@
-import type { Task } from 'src/types/service/maa/types';
+import type { Pipeline } from 'src/types/service/maa/types';
 import { SCREEN_LONG_SIDE } from 'src/types/service/maa/constants';
 
-export const NAVIGATE_TO_MAIN_SCREEN: Task = {
+export const NAVIGATE_TO_MAIN_SCREEN: Pipeline = {
   detectGameState: {
     next: ['clickBackToTitle', 'declineReturnToBattle', 'clickStartGame', 'goToMainScreen'],
   },

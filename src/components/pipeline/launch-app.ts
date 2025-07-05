@@ -1,6 +1,6 @@
-import type { Task } from 'src/types/service/maa/types';
+import type { Pipeline } from 'src/types/service/maa/types';
 
-export const LAUNCH_APP: Task = {
+export const LAUNCH_APP: Pipeline = {
   startApp: {
     action: 'StartApp',
     package: 'com.netease.yzs',
