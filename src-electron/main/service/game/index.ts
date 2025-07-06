@@ -9,12 +9,12 @@ import {
 } from 'app/src-electron/main/service/game/utils';
 import {
   decideMulliganByCost,
-  findOptimalPlay,
+  findOptimalAction,
 } from 'app/src-electron/main/service/game/utils/algorithms';
 import {
   cancelAll,
   endTurn,
-  swipeCardByFlatRect,
+  swipeByFlatRects,
 } from 'app/src-electron/main/service/game/utils/actions';
 import {
   getOrderOfPlay,
@@ -24,7 +24,7 @@ import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
 import { GameServiceTrait } from 'src/types/service/game';
 import { GameData } from 'src/types/service/game/types';
-import { SCREEN_LONG_SIDE, SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
+import { SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
 
 @injectable()
 export class GameService implements GameServiceTrait {
@@ -62,7 +62,7 @@ export class GameService implements GameServiceTrait {
         continue;
       }
       if (
-        !(await swipeCardByFlatRect(
+        !(await swipeByFlatRects(
           self.context,
           [cardToSwap.position.x, cardToSwap.position.y, 1, 1],
           [cardToSwap.position.x, SCREEN_SHORT_SIDE - cardToSwap.position.y, 1, 1],
@@ -140,14 +140,11 @@ export class GameService implements GameServiceTrait {
       Logger.warn('Game data is not ready for processing turn');
       return false;
     }
-    Logger.info(self.name);
 
-    const optimalPlay = findOptimalPlay(
-      this._gameData.self.hand,
-      this._gameData.self.playPoints.current,
-    );
-    if (!optimalPlay) {
-      Logger.info('No optimal play found');
+    const optimalAction = findOptimalAction(this._gameData);
+
+    if (!optimalAction) {
+      Logger.warn('No optimal action found for current game state');
       if (!(await endTurn(self.context))) {
         Logger.warn('Failed to end turn');
         return false;
@@ -156,22 +153,58 @@ export class GameService implements GameServiceTrait {
       return true;
     }
 
-    Logger.info('Optimal play found: ', optimalPlay);
-    if (!optimalPlay.position) {
-      Logger.warn('Optimal play card has no position');
-      return false;
-    }
-
-    if (
-      !(await swipeCardByFlatRect(
-        self.context,
-        [optimalPlay.position.x, optimalPlay.position.y, 1, 1],
-        [SCREEN_LONG_SIDE / 2, SCREEN_SHORT_SIDE / 2, 1, 1],
-      ))
-    ) {
-      Logger.warn('Failed to swipe on optimal play card: ', optimalPlay);
-      return false;
-    }
+    // switch (optimalAction?.type) {
+    //   case ActionType.playCard: {
+    //     if (!optimalAction.card || !optimalAction.card.position) {
+    //       Logger.warn('No card found for action: ', optimalAction);
+    //       return false;
+    //     }
+    //     if (
+    //       !(await swipeByFlatRects(
+    //         self.context,
+    //         [optimalAction.card.position.x, optimalAction.card.position.y, 1, 1],
+    //         [SCREEN_LONG_SIDE / 2, SCREEN_SHORT_SIDE / 2, 1, 1],
+    //       ))
+    //     ) {
+    //       Logger.warn('Failed to swipe single card: ', optimalAction.card);
+    //       return false;
+    //     }
+    //     break;
+    //   }
+    //   case ActionType.attackWithMinion: {
+    //     if (!optimalAction.attackerIndex || !optimalAction.targetIndex) {
+    //       Logger.warn('No attacker or target index found for action: ', optimalAction);
+    //       return false;
+    //     }
+    //     const attackerPosition = this._gameData.self.field?.at(
+    //       optimalAction.attackerIndex,
+    //     )?.position;
+    //     const targetPosition = this._gameData.opponent.field?.at(
+    //       optimalAction.targetIndex,
+    //     )?.position;
+    //     if (!attackerPosition || !targetPosition) {
+    //       Logger.warn('No attacker or target position found for action: ', optimalAction);
+    //       return false;
+    //     }
+    //     if (
+    //       !(await swipeByFlatRects(
+    //         self.context,
+    //         [attackerPosition.x, attackerPosition.y, 1, 1],
+    //         [targetPosition.x, targetPosition.y, 1, 1],
+    //       ))
+    //     ) {
+    //       Logger.warn('Failed to attack with minion: ', optimalAction);
+    //       return false;
+    //     }
+    //     break;
+    //   }
+    //   case ActionType.evolveMinion:
+    //     // 执行进化操作
+    //     break;
+    //   case ActionType.endTurn:
+    //     // 结束回合
+    //     break;
+    // }
 
     return true;
   }

@@ -54,7 +54,7 @@ export const focusOnHand = async (context: Context): Promise<boolean | undefined
   });
 };
 
-export const swipeCardByFlatRect = async (
+export const swipeByFlatRects = async (
   context: Context,
   begin: api.FlatRect,
   end: api.FlatRect,
