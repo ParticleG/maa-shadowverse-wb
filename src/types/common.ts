@@ -7,3 +7,8 @@ type AsyncifyMethod<T> = T extends (...args: infer Args) => infer Return
 export type AsyncClass<T> = {
   [K in keyof T]: AsyncifyMethod<T[K]>;
 };
+
+export enum Language {
+  zhCN = 'zh-CN',
+  enUS = 'en-US',
+}

@@ -1,4 +1,4 @@
-import { CustomActionSelf, CustomRecognizerSelf, api, Resource } from '@maaxyz/maa-node';
+import { api, CustomActionSelf, CustomRecognizerSelf, Resource } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
 import { injectable } from 'inversify';
 
@@ -22,12 +22,14 @@ import {
 } from 'app/src-electron/main/service/game/utils/recognitions';
 import { EMPTY_RECT } from 'app/src-electron/main/service/maa/constants';
 
+import { Language } from 'src/types/common';
 import { GameServiceTrait } from 'src/types/service/game';
 import { GameData } from 'src/types/service/game/types';
 import { SCREEN_SHORT_SIDE } from 'src/types/service/maa/constants';
 
 @injectable()
 export class GameService implements GameServiceTrait {
+  private _language = Language.zhCN;
   private readonly _gameData: GameData;
 
   constructor() {
@@ -84,7 +86,7 @@ export class GameService implements GameServiceTrait {
       return null;
     }
     Logger.info(`Order of play: ${orderOfPlay}`);
-    this._gameData.self.hand = await getInitialHand(self);
+    this._gameData.self.hand = await getInitialHand(self, this._language);
     Logger.info('Initial cards: ', this._gameData.self.hand);
     return [EMPTY_RECT, ''];
   }
@@ -105,7 +107,7 @@ export class GameService implements GameServiceTrait {
     this._gameData.self.playPoints = playPoints;
     Logger.info(`Play points: ${playPoints.current}/${playPoints.max}`);
 
-    const fieldInfo = await getCurrentFieldInfo(self);
+    const fieldInfo = await getCurrentFieldInfo(self, this._language);
     if (!fieldInfo) {
       Logger.warn('Failed to get current field info');
       return [EMPTY_RECT, ''];
@@ -114,7 +116,7 @@ export class GameService implements GameServiceTrait {
     this._gameData.self.field = fieldInfo.self;
     this._gameData.opponent.field = fieldInfo.opponent;
 
-    const currentHand = await getCurrentHand(self);
+    const currentHand = await getCurrentHand(self, this._language);
     if (!currentHand) {
       Logger.warn('Failed to get current hand');
       return null;

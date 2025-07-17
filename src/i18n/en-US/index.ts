@@ -27,9 +27,9 @@ export default {
           name: 'Auto Rank Battle',
           description: 'Navigate to rank battle and begin auto play',
         },
-        clearExclamationMarks: {
-          name: 'Clear Exclamation Marks',
-          description: 'Detect and clear exclamation marks on the screen',
+        clearRedDots: {
+          name: 'Clear Red Dots',
+          description: 'Navigate to the main screen and clear all red dots',
         },
         startUp: {
           name: 'Start Up',
@@ -45,6 +45,18 @@ export default {
           name: 'Auto Play',
           description: 'Automatically play the battle',
         },
+        claimAchievementsRewards:{
+          name: 'Claim Achievements Rewards',
+          description: 'Detect and navigate to the achievements screen, then claim rewards',
+        },
+        claimBattlePassRewards: {
+          name: 'Claim Battle Pass Rewards',
+          description: 'Detect and navigate to the battle pass screen, then claim rewards',
+        },
+        confirmCollectionLevel: {
+          name: 'Confirm Collection Level',
+          description: 'Detect and navigate to the card collection screen, then confirm achievements',
+        },
         launchApp: {
           name: 'Launch Application',
           description: 'Launch the app: com.netease.yzs',
@@ -52,6 +64,10 @@ export default {
         navigateToMainScreen: {
           name: 'Navigate to Main Screen',
           description: 'Detect game current state and navigate to the main screen',
+        },
+        receiveGift: {
+          name: 'Receive Gift',
+          description: 'Detect and navigate to the gift screen, then receive gifts',
         },
         startRankBattle: {
           name: 'Start Rank Battle',

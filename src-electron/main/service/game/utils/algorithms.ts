@@ -1,7 +1,8 @@
 import Logger from 'electron-log';
 
-import type { CardInfo, NullableCardInfo, GameData } from 'src/types/service/game/types';
-import { CardKeyword, CardType } from 'src/types/service/game/types';
+import type { CardInfo} from 'src/types/service/card/types';
+import { CardType } from 'src/types/service/card/types';
+import type { NullableCardInfo, GameData } from 'src/types/service/game/types';
 
 // 定义操作类型
 export enum ActionType {
@@ -93,43 +94,43 @@ const evaluateCardScore = (card: CardInfo, gameData: GameData): CardScore => {
   }
 
   // 关键词加分
-  if (card.keywords) {
-    for (const keyword of card.keywords) {
-      switch (keyword.type) {
-        case CardKeyword.storm: {
-          score += 15;
-          break;
-        }
-        case CardKeyword.rush: {
-          score += 10;
-          break;
-        }
-        case CardKeyword.ward: {
-          score += 8;
-          break;
-        }
-        case CardKeyword.drain: {
-          score += 6;
-          break;
-        }
-        case CardKeyword.bane: {
-          score += 7;
-          break;
-        }
-        case CardKeyword.fanfare: {
-          score += 5;
-          break;
-        }
-        case CardKeyword.evolve: {
-          score += 3;
-          break;
-        }
-        default:
-          score += 2;
-          break;
-      }
-    }
-  }
+  // if (card.keywords) {
+  //   for (const keyword of card.keywords) {
+  //     switch (keyword.type) {
+  //       case CardKeyword.storm: {
+  //         score += 15;
+  //         break;
+  //       }
+  //       case CardKeyword.rush: {
+  //         score += 10;
+  //         break;
+  //       }
+  //       case CardKeyword.ward: {
+  //         score += 8;
+  //         break;
+  //       }
+  //       case CardKeyword.drain: {
+  //         score += 6;
+  //         break;
+  //       }
+  //       case CardKeyword.bane: {
+  //         score += 7;
+  //         break;
+  //       }
+  //       case CardKeyword.fanfare: {
+  //         score += 5;
+  //         break;
+  //       }
+  //       case CardKeyword.evolve: {
+  //         score += 3;
+  //         break;
+  //       }
+  //       default:
+  //         score += 2;
+  //         break;
+  //     }
+  //   }
+  // }
 
   // 场面评估加分
   const selfMinionCount =
@@ -138,18 +139,18 @@ const evaluateCardScore = (card: CardInfo, gameData: GameData): CardScore => {
     gameData.opponent.field?.filter((card) => card?.type === CardType.minion).length || 0;
   // 如果对手场面多，优先考虑清场和防御
   if (opponentMinionCount > selfMinionCount) {
-    if (card.keywords?.some((k) => k.type === CardKeyword.ward)) {
-      score += 5;
-    }
+    // if (card.keywords?.some((k) => k.type === CardKeyword.ward)) {
+    //   score += 5;
+    // }
     if (card.type === CardType.spell) {
       score += 3;
     }
   }
   // 如果己方场面多，优先考虑进攻
   if (selfMinionCount > opponentMinionCount) {
-    if (card.keywords?.some((k) => k.type === CardKeyword.storm)) {
-      score += 8;
-    }
+    // if (card.keywords?.some((k) => k.type === CardKeyword.storm)) {
+    //   score += 8;
+    // }
   }
   // 低费曲线优化
   if (card.cost <= 2) {
@@ -179,9 +180,9 @@ const evaluateAttackAction = (
     description += '对手英雄';
 
     // Storm从者立即攻击优先级很高
-    if (attacker.keywords?.some(k => k.type === CardKeyword.storm)) {
-      priority += 20;
-    }
+    // if (attacker.keywords?.some(k => k.type === CardKeyword.storm)) {
+    //   priority += 20;
+    // }
   } else {
     // 攻击对手场地从者
     const target = gameData.opponent.field?.[targetIndex];
@@ -189,14 +190,14 @@ const evaluateAttackAction = (
       description += `对手第${targetIndex + 1}位从者`;
 
       // 如果目标有Ward，优先清除
-      if (target.keywords?.some(k => k.type === CardKeyword.ward)) {
-        priority += 12;
-      }
+      // if (target.keywords?.some(k => k.type === CardKeyword.ward)) {
+      //   priority += 12;
+      // }
 
       // 如果自己有Bane，优先用来清除高费从者
-      if (attacker.keywords?.some(k => k.type === CardKeyword.bane)) {
-        priority += target.cost * 2;
-      }
+      // if (attacker.keywords?.some(k => k.type === CardKeyword.bane)) {
+      //   priority += target.cost * 2;
+      // }
     }
   }
 
@@ -223,9 +224,9 @@ const evaluateEvolveAction = (
   const description = `进化第${minionIndex + 1}位从者`;
 
   // 如果从者有进化效果关键词，提高优先级
-  if (minion.keywords?.some(k => k.type === CardKeyword.evolve)) {
-    priority += 10;
-  }
+  // if (minion.keywords?.some(k => k.type === CardKeyword.evolve)) {
+  //   priority += 10;
+  // }
 
   // 场面劣势时进化优先级更高
   const selfMinionCount = gameData.self.field?.filter(card => card?.type === CardType.minion).length || 0;

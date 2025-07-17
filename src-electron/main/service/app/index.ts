@@ -7,6 +7,7 @@ import { release, version } from 'os';
 
 import packageJson from 'app/package.json';
 import { getArbitraryService } from 'app/src-electron/main/service';
+import { CardService } from 'app/src-electron/main/service/card';
 import { MaaService } from 'app/src-electron/main/service/maa';
 import { TrayService } from 'app/src-electron/main/service/tray';
 import type { WindowService } from 'app/src-electron/main/service/window';
@@ -18,6 +19,8 @@ import { WindowType } from 'src/types/service/window/types';
 @injectable()
 export class AppService implements AppServiceTrait {
   constructor(
+    @inject(ServiceType.card)
+    private _cardService: CardService,
     @inject(ServiceType.maa)
     private _maaService: MaaService,
     @inject(ServiceType.tray)
@@ -56,7 +59,7 @@ export class AppService implements AppServiceTrait {
     });
     app.whenReady().then(
       async () => {
-        await this._maaService.create();
+        await Promise.all([this._cardService.create(), this._maaService.create()]);
         this._trayService.create();
         this._windowService.getWindow(WindowType.main).create();
         log.info(`${packageJson.productName} is ready`);

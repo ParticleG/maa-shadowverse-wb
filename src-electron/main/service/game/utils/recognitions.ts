@@ -1,15 +1,19 @@
 import type { api, Context, RecoDetail } from '@maaxyz/maa-node';
 import Logger from 'electron-log';
 
-import { CARD_INFO_MAP } from 'src/types/service/game/card';
-import { CARD_NAME_CHINESE_MAP, CardNameChinese } from 'src/types/service/game/card/chinese';
+import { getService } from 'app/src-electron/main/service';
+import { LANGUAGE_ID_NAME_MAP } from 'app/src-electron/main/service/card/i18n/constants';
+import { runCustomRecognition } from 'app/src-electron/main/service/game/utils/common';
+
+import type { Language } from 'src/types/common';
+import { ServiceType } from 'src/types/service';
+import type { CardInfo } from 'src/types/service/card/types';
 import type { OrderOfPlay } from 'src/types/service/game/field';
 import {
   ORDER_OF_PLAY_CHINESE_MAP,
   OrderOfPlayChinese,
 } from 'src/types/service/game/field/chinese';
-import type { CardInfo, PlayerInfo } from 'src/types/service/game/types';
-import { runCustomRecognition } from 'app/src-electron/main/service/game/utils/common';
+import type { PlayerInfo } from 'src/types/service/game/types';
 
 const removeDuplicateDetails = (
   details: RecoDetail['filtered'] | undefined,
@@ -63,15 +67,65 @@ export const getAmuletCountInfo = async (
   };
 };
 
+export const getAttackAndHealthInfo = async (
+  context: Context,
+  image: ArrayBuffer,
+): Promise<{ atk: number; health: number } | undefined> => {
+  const atkResult = await runCustomRecognition(context, image, {
+    GameServiceGetAttack: {
+      recognition: 'OCR',
+      roi: [339, 72, 49, 59],
+      expected: '\\d+',
+      replace: [['\\s', '']],
+    },
+  });
+  if (!atkResult || !atkResult.hit || atkResult.detail.filtered.length !== 1) {
+    Logger.warn(`Attack not found or not in expected format: ${JSON.stringify(atkResult)}`);
+    return;
+  }
+  const atk = Number(atkResult.detail.filtered[0]?.text);
+  if (isNaN(atk)) {
+    Logger.warn(`Attack is not a number: ${atkResult.detail.filtered[0]?.text}`);
+    return;
+  }
+  if (atk < 0) {
+    Logger.warn(`Attack is out of expected range: ${atk}`);
+    return;
+  }
+  const healthResult = await runCustomRecognition(context, image, {
+    GameServiceGetHealth: {
+      recognition: 'OCR',
+      roi: [382, 74, 47, 54],
+      expected: '\\d+',
+      replace: [['\\s', '']],
+    },
+  });
+  if (!healthResult || !healthResult.hit || healthResult.detail.filtered.length !== 1) {
+    Logger.warn(`Health not found or not in expected format: ${JSON.stringify(healthResult)}`);
+    return;
+  }
+  const health = Number(healthResult.detail.filtered[0]?.text);
+  if (isNaN(health)) {
+    Logger.warn(`Health is not a number: ${healthResult.detail.filtered[0]?.text}`);
+    return;
+  }
+  if (health < 0) {
+    Logger.warn(`Health is out of expected range: ${health}`);
+    return;
+  }
+  return { atk, health };
+};
+
 export const getCardInfoByName = async (
   context: Context,
   image: ArrayBuffer,
+  language: Language,
 ): Promise<CardInfo | undefined> => {
   const result = await runCustomRecognition(context, image, {
     GameServiceGetCardName: {
       recognition: 'OCR',
       roi: [67, 39, 253, 39],
-      expected: Object.values(CardNameChinese),
+      expected: Array.from(LANGUAGE_ID_NAME_MAP[language].values()),
       replace: [
         ['毁灭创造物a', '毁灭创造物α'],
         ['毁灭创造物B', '毁灭创造物β'],
@@ -79,39 +133,12 @@ export const getCardInfoByName = async (
       ],
     },
   });
-  if (!result || !result.hit) {
-    Logger.warn(`Card OCR Name not found or not in expected format: ${JSON.stringify(result)}`);
+  const cardName = result?.detail.filtered[0]?.text;
+  if (!cardName) {
+    Logger.warn(`GameServiceGetCardName recognition failed: ${JSON.stringify(result)}`);
     return;
   }
-  const cardName = result.detail.filtered[0]?.text as CardNameChinese;
-  if (!Object.values(CardNameChinese).includes(cardName)) {
-    Logger.warn(`Card OCR Name not found in CardChineseName: ${cardName}`);
-    return;
-  }
-  const cardStandardName = CARD_NAME_CHINESE_MAP[cardName];
-  if (!cardStandardName) {
-    Logger.warn(`Card Chinese name not found in CARD_NAME_CHINESE_MAP: ${cardName}`);
-    return;
-  }
-  return structuredClone(CARD_INFO_MAP[cardStandardName]);
-};
-
-export const getMinionCountInfo = async (
-  context: Context,
-  image: ArrayBuffer,
-): Promise<{ self: number; opponent: number } | undefined> => {
-  const minionResult = await runCustomRecognition(context, image, {
-    GameServiceFindMinion: {
-      recognition: 'TemplateMatch',
-      roi: [180, 245, 890, 240],
-      template: 'minion_atk.png',
-      green_mask: true,
-    },
-  });
-  return {
-    self: minionResult?.detail.filtered.filter((result) => result.box[1] > 380).length ?? 0,
-    opponent: minionResult?.detail.filtered.filter((result) => result.box[1] <= 380).length ?? 0,
-  };
+  return structuredClone(getService(ServiceType.card).getCardInfoByName(cardName, language));
 };
 
 export const getHandCount = async (
@@ -141,6 +168,24 @@ export const getHandCount = async (
     return;
   }
   return deckCount;
+};
+
+export const getMinionCountInfo = async (
+  context: Context,
+  image: ArrayBuffer,
+): Promise<{ self: number; opponent: number } | undefined> => {
+  const minionResult = await runCustomRecognition(context, image, {
+    GameServiceFindMinion: {
+      recognition: 'TemplateMatch',
+      roi: [180, 245, 890, 240],
+      template: 'minion_atk.png',
+      green_mask: true,
+    },
+  });
+  return {
+    self: minionResult?.detail.filtered.filter((result) => result.box[1] > 380).length ?? 0,
+    opponent: minionResult?.detail.filtered.filter((result) => result.box[1] <= 380).length ?? 0,
+  };
 };
 
 export const getOrderOfPlay = async (

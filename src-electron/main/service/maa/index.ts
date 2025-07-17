@@ -131,6 +131,7 @@ export class MaaService implements MaaServiceTrait {
   async create() {
     Global.log_dir = LOG_PATH;
     Global.stdout_level = 'Off';
+    // Global.show_hit_draw = true;
     this._gameService.register(this._resource);
     return await this._resource.post_bundle(RESOURCES_PATH).wait().succeeded;
   }

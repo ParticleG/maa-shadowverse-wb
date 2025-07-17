@@ -2,8 +2,8 @@
 import { useQuasar } from 'quasar';
 import { ref, toRaw } from 'vue';
 
-import type { Workflow } from 'components/pipeline';
-import { BUILTIN_WORKFLOWS } from 'components/pipeline';
+import { BUILTIN_WORKFLOWS } from 'components/workflow';
+import type { Workflow } from 'components/workflow/types';
 
 import { ServiceType } from 'src/types/service';
 import { i18nSubPath, useService } from 'src/utils/common';
@@ -24,7 +24,7 @@ const props = withDefaults(
 const isError = ref(false);
 const isRunning = ref(false);
 const selectedWorkflow = ref<Workflow>();
-const splitterRatio = ref(30);
+const splitterRatio = ref(25);
 const stepIndex = ref(-1);
 
 const runWorkflow = async () => {
@@ -51,6 +51,9 @@ const runWorkflow = async () => {
         caption: (error as Error).message,
       });
     }
+    if (pipeline.ignoreFailure) {
+      isError.value = false;
+    }
     if (isError.value) {
       stepIndex.value += 0.5;
       break;
@@ -71,7 +74,7 @@ const selectWorkflow = (pipeline: Workflow) => {
   }
   isError.value = false;
   selectedWorkflow.value = pipeline;
-  splitterRatio.value = 30;
+  splitterRatio.value = 25;
   stepIndex.value = -1;
 };
 </script>

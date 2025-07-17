@@ -14,17 +14,21 @@ import {
 import { getScreenshot } from 'app/src-electron/main/service/game/utils/common';
 import {
   getAmuletCountInfo,
-  getMinionCountInfo,
-  getHandCount,
+  getAttackAndHealthInfo,
   getCardInfoByName,
+  getHandCount,
+  getMinionCountInfo,
 } from 'app/src-electron/main/service/game/utils/recognitions';
 
+import type { Language } from 'src/types/common';
+import { CardType } from 'src/types/service/card/types';
 import type { NullableCardInfo } from 'src/types/service/game/types';
 import { sleep } from 'src/utils/common';
 
 const getCardEntityInfoByFlatRect = async (
   context: Context,
   flatRect: api.FlatRect,
+  language: Language,
 ): Promise<NullableCardInfo> => {
   for (let i = 0; i < 4; i++) {
     if (i > 0) {
@@ -42,10 +46,17 @@ const getCardEntityInfoByFlatRect = async (
       Logger.warn('No screenshot available');
       continue;
     }
-    const cardInfo = await getCardInfoByName(context, screenshot);
+    const cardInfo = await getCardInfoByName(context, screenshot, language);
     if (!cardInfo) {
       Logger.warn(`Card info not found for card entity at ${JSON.stringify(flatRect)}`);
       continue;
+    }
+    if (cardInfo.type === CardType.minion) {
+      const atkAndHealth = await getAttackAndHealthInfo(context, screenshot);
+      if (!atkAndHealth) {
+        Logger.warn(`Failed to get attack and health info for card '${cardInfo.name}'`);
+        continue;
+      }
     }
     cardInfo.position = {
       x: flatRect[0],
@@ -56,7 +67,7 @@ const getCardEntityInfoByFlatRect = async (
   return null;
 };
 
-export const getCurrentFieldInfo = async (self: CustomRecognizerSelf) => {
+export const getCurrentFieldInfo = async (self: CustomRecognizerSelf, language: Language) => {
   const minionCountInfo = await getMinionCountInfo(self.context, self.image);
   if (minionCountInfo === undefined) {
     Logger.warn('Failed to get self follower count');
@@ -87,11 +98,15 @@ export const getCurrentFieldInfo = async (self: CustomRecognizerSelf) => {
   }
   const selfField: NullableCardInfo[] = [];
   for (const selfPermanentPosition of selfPermanentPositions) {
-    selfField.push(await getCardEntityInfoByFlatRect(self.context, selfPermanentPosition));
+    selfField.push(
+      await getCardEntityInfoByFlatRect(self.context, selfPermanentPosition, language),
+    );
   }
   const opponentField: NullableCardInfo[] = [];
   for (const opponentPermanentPosition of opponentPermanentPositions) {
-    opponentField.push(await getCardEntityInfoByFlatRect(self.context, opponentPermanentPosition));
+    opponentField.push(
+      await getCardEntityInfoByFlatRect(self.context, opponentPermanentPosition, language),
+    );
   }
   return {
     self: selfField,
@@ -99,7 +114,7 @@ export const getCurrentFieldInfo = async (self: CustomRecognizerSelf) => {
   };
 };
 
-export const getCurrentHand = async (self: CustomRecognizerSelf) => {
+export const getCurrentHand = async (self: CustomRecognizerSelf, language: Language) => {
   if (!(await focusOnHand(self.context))) {
     Logger.warn('Failed to focus on hand');
     return;
@@ -124,16 +139,19 @@ export const getCurrentHand = async (self: CustomRecognizerSelf) => {
 
   const currentHand: NullableCardInfo[] = [];
   for (const handPosition of handPositions) {
-    currentHand.push(await getCardEntityInfoByFlatRect(self.context, handPosition));
+    currentHand.push(await getCardEntityInfoByFlatRect(self.context, handPosition, language));
   }
 
   return currentHand;
 };
 
-export const getInitialHand = async (self: CustomRecognizerSelf): Promise<NullableCardInfo[]> => {
+export const getInitialHand = async (
+  self: CustomRecognizerSelf,
+  language: Language,
+): Promise<NullableCardInfo[]> => {
   const cards: NullableCardInfo[] = [];
   for (const initialHandPosition of INITIAL_HAND_POSITIONS) {
-    cards.push(await getCardEntityInfoByFlatRect(self.context, initialHandPosition));
+    cards.push(await getCardEntityInfoByFlatRect(self.context, initialHandPosition, language));
   }
   return cards;
 };

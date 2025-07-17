@@ -6,6 +6,8 @@ export class MainWindow extends BaseWindow {
   constructor() {
     super(WindowType.main, {
       storePosition: true,
+      width: 1200,
+      height: 800,
       useContentSize: true,
       frame: false,
     });
