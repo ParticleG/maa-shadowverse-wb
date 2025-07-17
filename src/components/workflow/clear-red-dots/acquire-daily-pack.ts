@@ -4,7 +4,7 @@ import { SCREEN_LONG_SIDE, SCREEN_SHORT_SIDE } from 'src/types/service/maa/const
 export const ACQUIRE_DAILY_PACK: Pipeline = {
   checkExclamationPointOverShopIcon: {
     next: ['clickBuyPackCard'],
-    timeout: 3000,
+    timeout: 2000,
     recognition: 'TemplateMatch',
     roi: [900, 620, 32, 32],
     template: 'red_dot_exclamation_xs.png',

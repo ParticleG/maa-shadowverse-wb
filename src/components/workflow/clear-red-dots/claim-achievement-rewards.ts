@@ -4,7 +4,7 @@ import { SCREEN_LONG_SIDE } from 'src/types/service/maa/constants';
 export const CLAIM_ACHIEVEMENT_REWARDS: Pipeline = {
   checkExclamationPointOverDrawerButton: {
     next: ['clickAchievementButton'],
-    timeout: 3000,
+    timeout: 2000,
     recognition: 'TemplateMatch',
     roi: [1219, 25, 31, 30],
     template: 'red_dot_exclamation_md.png',

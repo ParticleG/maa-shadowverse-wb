@@ -4,7 +4,7 @@ import { SCREEN_LONG_SIDE } from 'src/types/service/maa/constants';
 export const CLAIM_BATTLE_PASS_REWARDS: Pipeline = {
   checkExclamationPointOverBattlePassButton: {
     next: ['claimRewards'],
-    timeout: 3000,
+    timeout: 2000,
     recognition: 'TemplateMatch',
     roi: [295, 188, 38, 34],
     template: 'red_dot_exclamation_md.png',

@@ -3,7 +3,7 @@ import type { Pipeline } from 'src/types/service/maa/types';
 export const CONFIRM_COLLECTION_LEVEL: Pipeline = {
   checkExclamationPointOverCollectionLevelButton: {
     next: ['clickConfirmButton'],
-    timeout: 3000,
+    timeout: 2000,
     recognition: 'TemplateMatch',
     roi: [292, 43, 43, 43],
     template: 'red_dot_exclamation_md.png',

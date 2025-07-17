@@ -4,7 +4,7 @@ import { SCREEN_LONG_SIDE } from 'src/types/service/maa/constants';
 export const RECEIVE_GIFT: Pipeline = {
   checkExclamationPointOverGiftButton: {
     next: ['claimRewards'],
-    timeout: 3000,
+    timeout: 2000,
     recognition: 'TemplateMatch',
     roi: [1220, 163, 30, 29],
     template: 'red_dot_number_md.png',
