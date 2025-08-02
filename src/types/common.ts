@@ -9,6 +9,6 @@ export type AsyncClass<T> = {
 };
 
 export enum Language {
-  zhCN = 'zh-CN',
   enUS = 'en-US',
+  zhCN = 'zh-CN',
 }

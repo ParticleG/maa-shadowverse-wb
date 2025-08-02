@@ -65,6 +65,7 @@ const runWorkflow = async () => {
       name: workflowName,
     }),
   });
+  stepIndex.value++;
   isRunning.value = false;
 };
 

@@ -23,6 +23,10 @@ export default {
         runWorkflow: 'Run workflow',
       },
       workflows: {
+        autoFishing: {
+          name: 'Auto Fishing',
+          description: 'Automatically fish in the game',
+        },
         autoRankBattle: {
           name: 'Auto Rank Battle',
           description: 'Navigate to rank battle and begin auto play',
@@ -68,6 +72,10 @@ export default {
         receiveGift: {
           name: 'Receive Gift',
           description: 'Detect and navigate to the gift screen, then receive gifts',
+        },
+        startFishing: {
+          name: 'Start Fishing',
+          description: 'Navigate to the fishing scene',
         },
         startRankBattle: {
           name: 'Start Rank Battle',

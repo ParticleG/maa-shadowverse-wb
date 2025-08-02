@@ -121,7 +121,7 @@ export class GameService implements GameServiceTrait {
       Logger.warn('Failed to get current hand');
       return null;
     }
-    Logger.info(`Hand count: `, currentHand.length);
+    Logger.info(`Hand: `, currentHand);
     this._gameData.self.hand = currentHand;
 
     if (!currentHand.find((card) => card && card.cost <= playPoints.current)) {

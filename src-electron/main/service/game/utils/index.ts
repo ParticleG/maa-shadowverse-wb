@@ -3,9 +3,9 @@ import Logger from 'electron-log';
 
 import {
   INITIAL_HAND_POSITIONS,
-  OPPONENT_PERMANENT_POSITIONS_MAP,
+  OPPONENT_PERMANENT_POSITIONS_MAP, SELF_HAND_COST_POSITIONS_MAP,
   SELF_HAND_POSITIONS_MAP,
-  SELF_PERMANENT_POSITIONS_MAP,
+  SELF_PERMANENT_POSITIONS_MAP
 } from 'app/src-electron/main/service/game/constants';
 import {
   clickCardEntityByFlatRect,
@@ -13,29 +13,32 @@ import {
 } from 'app/src-electron/main/service/game/utils/actions';
 import { getScreenshot } from 'app/src-electron/main/service/game/utils/common';
 import {
-  getAmuletCountInfo,
-  getAttackAndHealthInfo,
-  getCardInfoByName,
+  getFieldAmuletCount,
   getHandCount,
-  getMinionCountInfo,
+  getFieldMinionCount,
 } from 'app/src-electron/main/service/game/utils/recognitions';
+import {
+  getCardEntityAttackAndLife,
+  getCardEntityName
+} from 'app/src-electron/main/service/game/utils/recognitions/card-entity';
 
 import type { Language } from 'src/types/common';
 import { CardType } from 'src/types/service/card/types';
 import type { NullableCardInfo } from 'src/types/service/game/types';
-import { sleep } from 'src/utils/common';
+import { getService } from 'app/src-electron/main/service';
+import { ServiceType } from 'src/types/service';
+import { getHandCardCost } from 'app/src-electron/main/service/game/utils/recognitions/hand';
 
 const getCardEntityInfoByFlatRect = async (
   context: Context,
   flatRect: api.FlatRect,
   language: Language,
 ): Promise<NullableCardInfo> => {
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i <= 3; i++) {
     if (i > 0) {
       Logger.warn(
         `Retrying to get card info for entity at ${JSON.stringify(flatRect)}... (${i}/3)`,
       );
-      await sleep(1000);
     }
     if (!(await clickCardEntityByFlatRect(context, flatRect))) {
       Logger.warn(`Failed to click on card entity at ${JSON.stringify(flatRect)}`);
@@ -46,16 +49,31 @@ const getCardEntityInfoByFlatRect = async (
       Logger.warn('No screenshot available');
       continue;
     }
-    const cardInfo = await getCardInfoByName(context, screenshot, language);
+    const cardName = await getCardEntityName(context, screenshot, language);
+    if (!cardName) {
+      Logger.warn(`Failed to get name for card entity at ${JSON.stringify(flatRect)}`);
+      continue;
+    }
+    const cardInfo = structuredClone(getService(ServiceType.card).getCardInfoByName(cardName, language));
     if (!cardInfo) {
       Logger.warn(`Card info not found for card entity at ${JSON.stringify(flatRect)}`);
       continue;
     }
+    // const cardCost = await getCardEntityCostInfo(context, screenshot);
+    // if (cardCost === undefined) {
+    //   Logger.warn(`Failed to get cost for card '${cardInfo.name}', use default value`);
+    // } else {
+    //   cardInfo.cost = cardCost;
+    // }
     if (cardInfo.type === CardType.minion) {
-      const atkAndHealth = await getAttackAndHealthInfo(context, screenshot);
-      if (!atkAndHealth) {
-        Logger.warn(`Failed to get attack and health info for card '${cardInfo.name}'`);
-        continue;
+      const atkAndLife = await getCardEntityAttackAndLife(context, screenshot);
+      if (!atkAndLife) {
+        Logger.warn(
+          `Failed to get current attack & life info for card '${cardInfo.name}', use default values`,
+        );
+      } else {
+        cardInfo.attack = atkAndLife.atk;
+        cardInfo.life = atkAndLife.life;
       }
     }
     cardInfo.position = {
@@ -68,34 +86,22 @@ const getCardEntityInfoByFlatRect = async (
 };
 
 export const getCurrentFieldInfo = async (self: CustomRecognizerSelf, language: Language) => {
-  const minionCountInfo = await getMinionCountInfo(self.context, self.image);
+  const minionCountInfo = await getFieldMinionCount(self.context, self.image);
   if (minionCountInfo === undefined) {
     Logger.warn('Failed to get self follower count');
     return;
   }
   Logger.info(`Minion counts: ${minionCountInfo.self}:${minionCountInfo.opponent}`);
-  const amuletCountInfo = await getAmuletCountInfo(self.context, self.image);
+  const amuletCountInfo = await getFieldAmuletCount(self.context, self.image);
   if (amuletCountInfo === undefined) {
     Logger.warn('Failed to get self spell and amulet count');
     return;
   }
   Logger.info(`Amulet counts: ${amuletCountInfo.self}:${amuletCountInfo.opponent}`);
   const selfPermanentPositions =
-    SELF_PERMANENT_POSITIONS_MAP[minionCountInfo.self + amuletCountInfo.self];
-  if (!selfPermanentPositions) {
-    Logger.warn(
-      `No self permanents positions defined for count: ${minionCountInfo.self + amuletCountInfo.self}`,
-    );
-    return;
-  }
+    SELF_PERMANENT_POSITIONS_MAP[minionCountInfo.self + amuletCountInfo.self] ?? [];
   const opponentPermanentPositions =
-    OPPONENT_PERMANENT_POSITIONS_MAP[minionCountInfo.opponent + amuletCountInfo.opponent];
-  if (!opponentPermanentPositions) {
-    Logger.warn(
-      `No opponent permanents positions defined for count: ${minionCountInfo.opponent + amuletCountInfo.opponent}`,
-    );
-    return;
-  }
+    OPPONENT_PERMANENT_POSITIONS_MAP[minionCountInfo.opponent + amuletCountInfo.opponent] ?? [];
   const selfField: NullableCardInfo[] = [];
   for (const selfPermanentPosition of selfPermanentPositions) {
     selfField.push(
@@ -130,19 +136,33 @@ export const getCurrentHand = async (self: CustomRecognizerSelf, language: Langu
     Logger.warn('Failed to get hand count');
     return;
   }
-
-  const handPositions = SELF_HAND_POSITIONS_MAP[handCount];
-  if (!handPositions) {
-    Logger.warn(`No hand positions defined for hand count: ${handCount}`);
+  const handCardPositions = SELF_HAND_POSITIONS_MAP[handCount];
+  if (!handCardPositions) {
+    Logger.warn(`No hand card positions defined for hand count: ${handCount}`);
+    return;
+  }
+  const handCostPositions = SELF_HAND_COST_POSITIONS_MAP[handCount];
+  if (!handCostPositions) {
+    Logger.warn(`No hand cost positions defined for hand count: ${handCount}`);
     return;
   }
 
-  const currentHand: NullableCardInfo[] = [];
-  for (const handPosition of handPositions) {
-    currentHand.push(await getCardEntityInfoByFlatRect(self.context, handPosition, language));
+  const currentHandList: NullableCardInfo[] = [];
+  for (const handPosition of handCardPositions) {
+    const currentHand = await getCardEntityInfoByFlatRect(self.context, handPosition.card, language)
+    if (!currentHand) {
+      Logger.warn(`Failed to get card info for hand position: ${JSON.stringify(handPosition.card)}`);
+      currentHandList.push(null);
+      continue;
+    }
+    const currentHandCost = await getHandCardCost(self.context, image, handPosition.cost);
+    if (currentHandCost !== undefined) {
+      currentHand.cost = currentHandCost;
+    }
+    currentHandList.push(currentHand);
   }
 
-  return currentHand;
+  return currentHandList;
 };
 
 export const getInitialHand = async (

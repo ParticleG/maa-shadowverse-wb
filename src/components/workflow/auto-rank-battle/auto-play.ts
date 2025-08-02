@@ -5,8 +5,8 @@ export const AUTO_PLAY: Pipeline = {
     next: [],
     recognition: 'Custom',
     custom_recognition: 'recProcessTurn',
-    action: 'Custom',
-    custom_action: 'actProcessTurn',
+    // action: 'Custom',
+    // custom_action: 'actProcessTurn',
   },
   checkStageSwapInitialCards: {
     next: ['doMulligan'],
