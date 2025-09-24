@@ -45,6 +45,10 @@ export default {
           name: 'Acquire Daily Pack',
           description: 'Detect and acquire the daily pack from the game',
         },
+        autoCastingAndLanding: {
+          name: 'Auto Casting and Landing',
+          description: 'Automatically cast and land the fishing rod',
+        },
         autoPlay: {
           name: 'Auto Play',
           description: 'Automatically play the battle',

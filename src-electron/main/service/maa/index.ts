@@ -37,7 +37,7 @@ export class MaaService implements MaaServiceTrait {
           input_methods: device[4],
           config: device[5],
         }))
-        // .filter((device) => isValidIpPort(device.address))
+        .filter((device) => isValidIpPort(device.address))
         .reduce((acc, item) => {
           if (!acc.some((d) => d.address === item.address)) {
             acc.push(item);
